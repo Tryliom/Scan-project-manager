@@ -1,0 +1,8 @@
+node_modules/
+.idea/
+*.iml
+.idea/modules.xml
+assets/data/*
+assets/backup/*
+.env
+package-lock.json
