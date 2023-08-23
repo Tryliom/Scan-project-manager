@@ -33,8 +33,8 @@ export class Command
     AssignScanProjectManager(scanProjectManager)
     {
         this._scanProjectManager = scanProjectManager;
-        this._commandController = this._scanProjectManager.CommandController;
-        this._client = this._scanProjectManager.Client;
+        this._commandController = this._scanProjectManager.CommandCenter;
+        this._client = this._scanProjectManager.DiscordClient;
     }
 
     AsSlashCommand()

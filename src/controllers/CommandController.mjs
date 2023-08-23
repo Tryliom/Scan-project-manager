@@ -36,7 +36,7 @@ export class CommandController
         const rest = new REST({version: '10'}).setToken(process.env.token);
 
         await rest.put(
-            Routes.applicationCommands(this._scanProjectManager.Client.user.id),
+            Routes.applicationCommands(this._scanProjectManager.DiscordClient.user.id),
             {
                 body: this.Commands.map(command => command.AsSlashCommand())
             },

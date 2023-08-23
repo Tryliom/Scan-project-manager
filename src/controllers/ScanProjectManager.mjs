@@ -1,51 +1,64 @@
 import {Client, GatewayIntentBits} from "discord.js";
 
 import {CommandController} from "./CommandController.mjs";
+import {DataController} from "./DataController.mjs";
 import {Logger} from "../models/utility/Logger.mjs";
 
 export class ScanProjectManager
 {
     /** @type {CommandController} */
-    CommandController
+    CommandCenter
+    /** @type {DataController} */
+    DataCenter
     /** @type {Client} */
-    Client
+    DiscordClient
 
     constructor()
     {
-        this.CommandController = new CommandController();
+        this.CommandCenter = new CommandController();
+        this.DataCenter = new DataController(this);
 
-        this.CommandController.AssignScanProjectManager(this);
+        this.CommandCenter.AssignScanProjectManager(this);
+        this.DataCenter.Backup();
 
-        this.Client = new Client({intents: [
+        setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);
+        setInterval(() => this.DataCenter.SaveAll(), 1000 * 60);
+
+        this.DiscordClient = new Client({intents: [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
             GatewayIntentBits.DirectMessages
         ]});
 
-        this.Client.login(process.env.token).catch((reason) =>
+        this.DiscordClient.login(process.env.token).catch((reason) =>
         {
             Logger.Log(`Login failed for ${reason}`);
         });
 
-        this.Client.on("disconnect", async () =>
+        this.DiscordClient.on("disconnect", async () =>
         {
             Logger.Log("Disconnected");
         });
 
-        this.Client.once('ready', async () =>
+        this.DiscordClient.once('ready', async () =>
         {
             Logger.Log('Connected');
-
-            await this.CommandController.RefreshSlashCommands();
+            await this.DiscordClient.user.setActivity(`/help | v${process.env.npm_package_version}`);
+            await this.CommandCenter.RefreshSlashCommands();
         });
 
-        this.Client.on("interactionCreate", async interaction =>
+        this.DiscordClient.on("error", e =>
+        {
+            Logger.Log("Discord error", e);
+        });
+
+        this.DiscordClient.on("interactionCreate", async interaction =>
         {
             if (interaction.isAutocomplete())
             {
                 try
                 {
-                    await this.CommandController.OnAutocomplete(interaction);
+                    await this.CommandCenter.OnAutocomplete(interaction);
                 }
                 catch (error)
                 {
@@ -54,7 +67,7 @@ export class ScanProjectManager
             } else if (interaction.isCommand()) {
                 try
                 {
-                    await this.CommandController.OnCommand(interaction);
+                    await this.CommandCenter.OnCommand(interaction);
                 }
                 catch (error)
                 {
@@ -62,5 +75,33 @@ export class ScanProjectManager
                 }
             }
         });
+    }
+
+    async EmergencyExit(reason)
+    {
+        Logger.Log("Emergency exit", reason);
+
+        // Send message to creator in DM with the reason
+        await this.SendDM(process.env.creatorID, `Emergency exit: ${reason}`);
+
+        process.exit();
+    }
+
+    /**
+     *  Get the user object from discord.
+     * @param id The ID of the user you want to get
+     * @returns {Promise<User>}
+     */
+    async GetUser(id)
+    {
+        return await this.DiscordClient.users.fetch(id);
+    }
+
+    async SendDM(userID, message)
+    {
+        const user = await this.GetUser(userID);
+
+        await user.createDM();
+        await user.send(message);
     }
 }
