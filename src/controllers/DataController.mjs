@@ -2,8 +2,8 @@ import fs from "fs";
 
 import {Logger} from "../models/utility/Logger.mjs";
 import {StringUtility} from "../models/utility/StringUtility.mjs";
-import {User} from "../models/data/User.mjs";
 import {Server} from "../models/data/Server.mjs";
+import {Work} from "../models/data/Work.mjs";
 
 function SaveJsonToFile(path, content)
 {
@@ -40,7 +40,7 @@ export class DataController
 {
     /** @type {ScanProjectManager} */
     _scanProjectManager
-    /** @type {Object<string, User>} */
+    /** @type {Object<string, Work[]>} */
     _users
     /** @type {Object<string, Server>} */
     _servers
@@ -58,7 +58,13 @@ export class DataController
         // Convert data to User objects
         for (const userId in this._users)
         {
-            this._users[userId] = new User(this._users[userId]);
+            const works = this._users[userId];
+            this._users[userId] = [];
+
+            for (const work of works)
+            {
+                this._users[userId].push(new Work(work));
+            }
         }
 
         // Convert data to Server objects

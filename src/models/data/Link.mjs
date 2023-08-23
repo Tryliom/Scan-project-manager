@@ -1,9 +1,9 @@
 export class Link
 {
     /** @type {string} */
-    Title
+    Title = ""
     /** @type {string} */
-    Link
+    Link = ""
 
     constructor(data)
     {

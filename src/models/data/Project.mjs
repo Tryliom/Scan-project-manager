@@ -34,8 +34,8 @@ export class Project
     Notify = NotifyType.channel
     /** @type {boolean} */
     AutoTask = false
-    /** @type {ProjectRole} */
-    ProjectManagerRole = null
+    /** @type {Snowflake[]} */
+    ProjectManagerRoles = []
     /** @type {ProjectRole[]} */
     Roles = []
     /** @type {Task[]} */
@@ -58,7 +58,7 @@ export class Project
         this.ChannelId = data.ChannelId;
         this.Notify = data.Notify;
         this.AutoTask = data.AutoTask;
-        this.ProjectManagerRole = data.ProjectManagerRole;
+        this.ProjectManagerRoles = data.ProjectManagerRoles;
         this.Roles = [];
         this.Tasks = [];
         this.LastTaskDone = data.LastTaskDone;
