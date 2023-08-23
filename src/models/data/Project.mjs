@@ -1,5 +1,3 @@
-import { Snowflake } from "discord.js";
-
 import { Link } from "./Link.mjs";
 import {ProjectRole} from "./ProjectRole.mjs";
 import {Task} from "./Task.mjs";
@@ -28,14 +26,16 @@ export class Project
     ImageLink = ""
     /** @type {Link[]} */
     Links = []
-    /** @type {Snowflake} */
+    /** @type {string} */
     ChannelId = ""
     /** @type {NotifyType} */
     Notify = NotifyType.channel
     /** @type {boolean} */
     AutoTask = false
-    /** @type {Snowflake[]} */
-    ProjectManagerRoles = []
+    /**
+     * @brief The user ids that are allowed to manage the project.
+     * @type {string[]} */
+    ProjectManagers = []
     /** @type {ProjectRole[]} */
     Roles = []
     /** @type {Task[]} */
@@ -58,7 +58,7 @@ export class Project
         this.ChannelId = data.ChannelId;
         this.Notify = data.Notify;
         this.AutoTask = data.AutoTask;
-        this.ProjectManagerRoles = data.ProjectManagerRoles;
+        this.ProjectManagers = data.ProjectManagers;
         this.Roles = [];
         this.Tasks = [];
         this.LastTaskDone = data.LastTaskDone;

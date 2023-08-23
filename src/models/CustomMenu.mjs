@@ -1,5 +1,5 @@
 import APIMessageComponentEmoji, {
-    Message, ButtonStyle, MessageComponentInteraction, EmbedBuilder, SelectMenuBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction
+    Message, ButtonStyle, MessageComponentInteraction, EmbedBuilder, SelectMenuBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder
 } from "discord.js";
 import {v4} from "uuid";
 
@@ -149,7 +149,7 @@ export class CustomMenu
             components.push(
                 new ActionRowBuilder()
                     .addComponents(
-                        new SelectMenuBuilder()
+                        new StringSelectMenuBuilder()
                             .setCustomId("menu")
                             .setPlaceholder("Go to...")
                             .setMinValues(1)

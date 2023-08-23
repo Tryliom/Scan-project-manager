@@ -5,7 +5,7 @@ export class Server
 {
     /** @type {Template[]} */
     Templates = []
-    /** @type {Object<string, Project[]>} */
+    /** @type {Object<string, Project>} */
     Projects = {}
 
     constructor(data)
@@ -18,7 +18,7 @@ export class Server
             this.Templates.push(new Template(template));
         }
 
-        for (const projectId of data.Projects)
+        for (const projectId in data.Projects)
         {
             this.Projects[projectId] = new Project(data.Projects[projectId]);
         }

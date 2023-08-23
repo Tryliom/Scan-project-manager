@@ -38,24 +38,6 @@ export class Help extends Command
             }
         }
 
-        // Add 11 others fake fields to test it
-        for (let i = 0; i < 11; i++)
-        {
-            embedMessage.addFields(
-                {
-                    name: "Test",
-                    value: "Test",
-                    inline: true
-                }
-            );
-
-            if (embedMessage.data.fields.length === 5 || i === 10)
-            {
-                list.push(embedMessage);
-                embedMessage = getDefaultEmbed();
-            }
-        }
-
         new CustomMenu(interaction, list).launchMenu();
     }
 }

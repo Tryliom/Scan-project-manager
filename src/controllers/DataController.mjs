@@ -1,9 +1,12 @@
 import fs from "fs";
+import pkg from "discord.js";
 
 import {Logger} from "../models/utility/Logger.mjs";
 import {StringUtility} from "../models/utility/StringUtility.mjs";
 import {Server} from "../models/data/Server.mjs";
 import {Work} from "../models/data/Work.mjs";
+
+const {Interaction} = pkg;
 
 function SaveJsonToFile(path, content)
 {
@@ -91,13 +94,71 @@ export class DataController
 
     Backup()
     {
+        const usersLength = Object.keys(this._users).length;
+        const serversLength = Object.keys(this._servers).length;
+
+        if (usersLength === 0 && serversLength === 0) return;
+
         const path = BackupPath + StringUtility.FormatDate(new Date());
 
         if (!fs.existsSync(path)) fs.mkdirSync(path);
 
-        SaveJsonToFile(`${path}/${UsersName}`, this._users);
-        SaveJsonToFile(`${path}/${ServersName}`, this._servers);
+        if (usersLength > 0)    SaveJsonToFile(`${path}/${UsersName}`, this._users);
+        if (serversLength > 0)  SaveJsonToFile(`${path}/${ServersName}`, this._servers);
 
         Logger.Log("Backed up all data");
+    }
+
+    /**
+     * @brief Initialize the user and server where the interaction was made if they don't exist.
+     * @param interaction {Interaction}
+     */
+    InitData(interaction)
+    {
+        if (interaction.guild)
+        {
+            this.CreateServerIfNotExist(interaction.guildId);
+        }
+
+        this.CreateUserIfNotExist(interaction.user.id);
+    }
+
+    CreateUserIfNotExist(userId)
+    {
+        if (this._users[userId] === undefined)
+        {
+            this._users[userId] = [];
+        }
+    }
+
+    CreateServerIfNotExist(serverId)
+    {
+        if (this._servers[serverId] === undefined)
+        {
+            this._servers[serverId] = Object.create(Server.prototype);
+        }
+    }
+
+    // Information functions
+
+    /**
+     * @brief Get the project from the channel where the interaction was made.
+     * @param {Interaction} interaction
+     * @returns {Project | undefined}
+     * */
+    GetProjectFromChannel(interaction)
+    {
+        if (this._servers[interaction.guildId] === undefined) return undefined;
+
+        const projects = this._servers[interaction.guildId].Projects;
+
+        for (const projectId in projects)
+        {
+            if (projects[projectId].ChannelId !== interaction.channelId) continue;
+
+            return projects[projectId];
+        }
+
+        return undefined;
     }
 }

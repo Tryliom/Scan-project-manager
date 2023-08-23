@@ -20,14 +20,17 @@ export class Command
     Description
     /** @type {boolean} */
     Admin
+    /** @type {boolean} */
+    OnlyProjectChannel
 
-    constructor(name, args, minArgs, description, admin = false)
+    constructor(name, args, minArgs, description, admin = false, onlyProjectChannel = false)
     {
         this.Name = name;
         this.Args = args;
         this.MinArgs = minArgs;
         this.Description = description;
         this.Admin = admin;
+        this.OnlyProjectChannel = onlyProjectChannel;
     }
 
     AssignScanProjectManager(scanProjectManager)

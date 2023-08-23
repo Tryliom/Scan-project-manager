@@ -1,10 +1,8 @@
-import { Snowflake } from "discord.js";
-
 export class ProjectRole
 {
     /** @type {string} */
     Name = "";
-    /** @type {Snowflake[]} */
+    /** @type {string[]} */
     Users= [];
 
     constructor(data)

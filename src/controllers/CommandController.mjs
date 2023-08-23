@@ -46,26 +46,43 @@ export class CommandController
     async OnCommand(interaction) {
         for (let command of this.Commands)
         {
-            if (command.Name === interaction.commandName)
+            if (command.Name !== interaction.commandName) continue;
+
+            this._scanProjectManager.DataCenter.InitData(interaction);
+
+            if (command.Admin && !SecurityUtility.IsAdmin(interaction))
             {
-                if (command.Admin && !SecurityUtility.IsAdmin(interaction))
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                    "Admin command",
+                    `You are not the admin of this bot.`
+                ))
+            }
+            else if (command.OnlyProjectChannel && !this._scanProjectManager.DataCenter.GetProjectFromChannel(interaction))
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                    "Not in project channel",
+                    `You need to be in a project channel to use this command.`
+                ))
+            }
+            else if (command.MinArgs + 1 > interaction.options.length)
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                    "Args are missing",
+                    `/${command.Name} ${command.Args}\n\nRequire minimum ${command.MinArgs} parameters to the command.`
+                ))
+            }
+            else
+            {
+                try
                 {
-                    await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("Admin command", `You are not the admin of this bot`))
+                    await command.Run(interaction);
                 }
-                else if (command.MinArgs + 1 > interaction.options.length)
+                catch (e)
                 {
-                    await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("Args are missing", `Require min ${command.MinArgs} args`))
-                }
-                else
-                {
-                    try
-                    {
-                        await command.Run(interaction);
-                    }
-                    catch (e)
-                    {
-                        await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("Error", `An error occurred: ` + e.toString()));
-                    }
+                    await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                        "Error",
+                        `An error occurred: ` + e.toString()
+                    ));
                 }
             }
         }
