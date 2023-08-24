@@ -149,4 +149,28 @@ export class DataController
 
         return undefined;
     }
+
+    /**
+     * @brief Get the templates from the server where the interaction was made.
+     * @param {CommandInteraction} interaction
+     * @returns {Template[] | undefined}
+     * */
+    GetTemplates(interaction)
+    {
+        if (this._servers[interaction.guildId] === undefined) return undefined;
+
+        return this._servers[interaction.guildId].Templates;
+    }
+
+    /**
+     * @brief Get the projects from the server where the interaction was made.
+     * @param {CommandInteraction} interaction
+     * @returns {Object<string, Project> | undefined}
+     */
+    GetProjects(interaction)
+    {
+        if (this._servers[interaction.guildId] === undefined) return undefined;
+
+        return this._servers[interaction.guildId].Projects;
+    }
 }

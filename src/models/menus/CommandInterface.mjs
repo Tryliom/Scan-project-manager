@@ -1,6 +1,6 @@
 import APIMessageComponentEmoji, {
-    ButtonStyle, MessageComponentInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder,
-    ButtonInteraction, InteractionCollector, ModalSubmitInteraction
+    ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder,
+    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction
 } from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
@@ -18,7 +18,6 @@ const CollectorTime = 90 * 60000;
  *     <li>OnMenu(interaction)</li>
  *     <li>OnModal(interaction)</li>
  *     <li>OnMenuInteraction(interaction): Call it at the end of the function</li>
- *     <li>OnFilterChange()</li>
  *     <li>OnMenuPageChange(index): Call it at the end of the function</li>
  *     <li>OnChangePage()</li>
  * </ul>
@@ -27,7 +26,7 @@ export class CommandInterface
 {
     /**
      * @brief The original interaction that started the command
-     * @type {MessageComponentInteraction} */
+     * @type {CommandInteraction} */
     Interaction
     /**
      * @brief The last interaction that was made by the user
@@ -48,30 +47,48 @@ export class CommandInterface
     /** @type {InteractionCollector} */
     Collector
 
+    /** @type {Object<string, number>} */
+    _menus = {}
+
 
     /**
      * Command interface constructor
      * @constructor
-     * @param interaction {MessageComponentInteraction}
-     * @param lastInteraction {ButtonInteraction | SelectMenuInteraction | null}
-     * @param menuList {[{onMenuClick: Function, getList: Function, options: {label: Function, value: Function}, placeholder: string}], []}
-     * @param ephemeral {boolean} If the message is ephemeral, only the user can see it
+     * @param interaction {CommandInteraction}
      */
-    constructor(interaction, lastInteraction = null, menuList = [], ephemeral = false)
+    constructor(interaction)
     {
-        this.LastInteraction = lastInteraction;
         this.Interaction = interaction;
-        this.MenuList = menuList;
-        this.Ephemeral = ephemeral;
 
         this.Error = "";
         this.ConfirmationMessage = "";
         this.IgnoreInteractions = false;
+    }
+
+    SetLastInteraction(interaction)
+    {
+        this.LastInteraction = interaction;
+
+        return this;
+    }
+
+    SetMenuList(menuList)
+    {
+        this.MenuList = menuList;
 
         for (let item of this.MenuList)
         {
-            this[`menu${this.MenuList.indexOf(item)}`] = 0;
+            this._menus[`menu${this.MenuList.indexOf(item)}`] = 0;
         }
+
+        return this;
+    }
+
+    SetEphemeral(ephemeral)
+    {
+        this.Ephemeral = ephemeral;
+
+        return this;
     }
 
     async Start()
@@ -173,12 +190,6 @@ export class CommandInterface
     {
         await this.OnMenu(interaction);
 
-        if (interaction.customId === "menu-filter")
-        {
-            this.filter = interaction.values[0];
-            this.OnFilterChange();
-        }
-
         await this.OnMenuInteraction(interaction);
         await this.UpdateMsg();
     }
@@ -216,11 +227,6 @@ export class CommandInterface
     }
 
     /**
-     * Use this function if you need to do something when filter change
-     */
-    OnFilterChange() {}
-
-    /**
      * Use this function if you need to do something when menu page change (not call if it's less and more)
      * @param index
      * @returns
@@ -234,7 +240,7 @@ export class CommandInterface
      */
     SetMenuPage(index, value)
     {
-        this[`menu${index}`] = value;
+        this._menus[`menu${index}`] = value;
     }
 
     UpdateMenuPageWithPage(index, page)
@@ -277,22 +283,6 @@ export class CommandInterface
                 .setStyle(ButtonStyle.Secondary)
                 .setCustomId("close")
         )
-    }
-
-    GetFilter(filters)
-    {
-        return new ActionRowBuilder()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId("menu-filter")
-                    .setPlaceholder(`Filter: ${this.filter}`)
-                    .setMinValues(1)
-                    .setMaxValues(1)
-                    .addOptions(...this.GetOptions(0, Object.keys(filters), {
-                        label: (item) => filters[item],
-                        value: (item) => filters[item]
-                    }))
-            )
     }
 
     GetChangePageButtons()
@@ -377,11 +367,11 @@ export class CommandInterface
             {
                 if (interaction.values[0] === "less")
                 {
-                    this[`menu${index}`]--;
+                    this._menus[`menu${index}`]--;
                 }
                 else if (interaction.values[0] === "more")
                 {
-                    this[`menu${index}`]++;
+                    this._menus[`menu${index}`]++;
                 }
                 else
                 {
@@ -408,7 +398,7 @@ export class CommandInterface
                                 .setPlaceholder(item.placeholder)
                                 .setMinValues(1)
                                 .setMaxValues(1)
-                                .addOptions(...this.GetOptions(this[`menu${i}`], item.getList(), item.options))
+                                .addOptions(...this.GetOptions(this._menus[`menu${i}`], item.getList(), item.options))
                         )
                 );
             }

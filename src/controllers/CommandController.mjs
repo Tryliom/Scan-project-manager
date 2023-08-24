@@ -1,11 +1,12 @@
 import {REST} from "discord.js";
 import {Routes} from "discord-api-types/v10";
 
-import {Help} from "../models/command/commands/Help.mjs";
 import {SecurityUtility} from "../models/utility/SecurityUtility.mjs";
 import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
 import {ScanProjectManager} from "./ScanProjectManager.mjs";
+import {Help} from "../models/command/commands/Help.mjs";
+import {Templates} from "../models/command/commands/Templates.mjs";
 
 export class CommandController
 {
@@ -17,7 +18,8 @@ export class CommandController
         // Create all commands to be used
         this.Commands =
         [
-            new Help()
+            new Help(),
+            new Templates()
         ];
     }
 
@@ -43,7 +45,7 @@ export class CommandController
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Admin command",
-                    `You are not the admin of this bot.`
+                    `You are not the admin of this server.`
                 ))
             }
             else if (command.OnlyProjectChannel && !ScanProjectManager.Instance.DataCenter.GetProjectFromChannel(interaction))
@@ -51,6 +53,13 @@ export class CommandController
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Not in project channel",
                     `You need to be in a project channel to use this command.`
+                ))
+            }
+            else if (command.OnlyInServer && !interaction.guildId)
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                    "Not in server",
+                    `You need to be in a server to use this command.`
                 ))
             }
             else if (command.MinArgs + 1 > interaction.options.length)
@@ -72,6 +81,8 @@ export class CommandController
                         "Error",
                         `An error occurred: ` + e.toString()
                     ));
+
+                    console.error(e);
                 }
             }
         }

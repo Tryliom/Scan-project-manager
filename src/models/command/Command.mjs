@@ -20,36 +20,48 @@ export class Command
     /** @type {string} */
     Description
     /** @type {boolean} */
-    Admin
+    Admin = false
     /** @type {boolean} */
-    OnlyProjectChannel
+    OnlyProjectChannel = false
+    /** @type {boolean} */
+    OnlyInServer = false
 
-    constructor(name, args, minArgs, description, admin = false, onlyProjectChannel = false)
+    constructor(name, args, minArgs, description)
     {
         this.Name = name;
         this.Args = args;
         this.MinArgs = minArgs;
         this.Description = description;
-        this.Admin = admin;
-        this.OnlyProjectChannel = onlyProjectChannel;
 
         this._scanProjectManager = ScanProjectManager.Instance;
         this._commandController = this._scanProjectManager.CommandCenter;
         this._client = this._scanProjectManager.DiscordClient;
     }
 
+    SetAdmin()
+    {
+        this.Admin = true;
+    }
+
+    SetOnlyProjectChannel()
+    {
+        this.OnlyProjectChannel = true;
+    }
+
+    SetOnlyInServer()
+    {
+        this.OnlyInServer = true;
+    }
+
     AsSlashCommand()
     {
         let description = StringUtility.CutText(this.Description, 100);
 
-        if (this.Admin)
-        {
-            description = "[Only admin] " + StringUtility.CutText(this.Description, 100 - 13);
-        }
-
         const slashCommand = new SlashCommandBuilder()
             .setName(this.Name)
-            .setDescription(description);
+            .setDescription(description)
+            .setDMPermission(!this.OnlyInServer)
+            .setDefaultMemberPermissions(this.Admin ? 8 : undefined);
 
         this.AddSubCommands(slashCommand);
         this.AddOptions(slashCommand);
