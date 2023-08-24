@@ -5,21 +5,19 @@ import {Logger} from "../models/utility/Logger.mjs";
 import {StringUtility} from "../models/utility/StringUtility.mjs";
 import {Server} from "../models/data/Server.mjs";
 import {Work} from "../models/data/Work.mjs";
+import {ScanProjectManager} from "./ScanProjectManager.mjs";
 
-const {Interaction} = pkg;
+const {CommandInteraction} = pkg;
 
 function SaveJsonToFile(path, content)
 {
-    return SaveFile(path, JSON.stringify(content));
+    SaveFile(path, JSON.stringify(content));
 }
 
 function SaveFile(path, content)
 {
-    if (content === "") return false;
-
-    fs.writeFileSync(path, content);
-
-    return true;
+    if (content === "") ScanProjectManager.Instance.EmergencyExit("Users file is empty");
+    else                fs.writeFileSync(path, content);
 }
 
 function LoadFile(path)
@@ -41,16 +39,13 @@ const ServersName = "servers.json";
 
 export class DataController
 {
-    /** @type {ScanProjectManager} */
-    _scanProjectManager
     /** @type {Object<string, Work[]>} */
     _users
     /** @type {Object<string, Server>} */
     _servers
 
-    constructor(scanProjectManager)
+    constructor()
     {
-        this._scanProjectManager = scanProjectManager;
         this._servers = {};
         this._users = {};
 
@@ -79,15 +74,8 @@ export class DataController
 
     SaveAll()
     {
-        if (!SaveJsonToFile(DataPath + UsersName, this._users))
-        {
-            return this._scanProjectManager.EmergencyExit("Users file is empty");
-        }
-
-        if (!SaveJsonToFile(DataPath + ServersName, this._servers))
-        {
-            return this._scanProjectManager.EmergencyExit("Servers file is empty");
-        }
+        SaveJsonToFile(DataPath + UsersName, this._users);
+        SaveJsonToFile(DataPath + ServersName, this._servers);
 
         Logger.Log("Saved all data");
     }
@@ -111,11 +99,11 @@ export class DataController
 
     /**
      * @brief Initialize the user and server where the interaction was made if they don't exist.
-     * @param interaction {Interaction}
+     * @param interaction {CommandInteraction}
      */
     InitData(interaction)
     {
-        if (interaction.guild)
+        if (interaction.guildId !== undefined)
         {
             this.CreateServerIfNotExist(interaction.guildId);
         }
@@ -143,7 +131,7 @@ export class DataController
 
     /**
      * @brief Get the project from the channel where the interaction was made.
-     * @param {Interaction} interaction
+     * @param {CommandInteraction} interaction
      * @returns {Project | undefined}
      * */
     GetProjectFromChannel(interaction)

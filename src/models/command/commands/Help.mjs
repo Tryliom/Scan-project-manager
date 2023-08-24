@@ -1,6 +1,6 @@
 import {Command} from "../Command.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
-import {CustomMenu} from "../../CustomMenu.mjs";
+import {CustomMenu} from "../../menus/CustomMenu.mjs";
 import {SecurityUtility} from "../../utility/SecurityUtility.mjs";
 
 export class Help extends Command

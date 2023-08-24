@@ -1,13 +1,12 @@
 import APIMessageComponentEmoji, {
     Message, ButtonStyle, MessageComponentInteraction, EmbedBuilder, SelectMenuBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder
 } from "discord.js";
-import {v4} from "uuid";
 
-import {SecurityUtility} from "./utility/SecurityUtility.mjs";
-import {StringUtility} from "./utility/StringUtility.mjs";
-import {DiscordUtility} from "./utility/DiscordUtility.mjs";
-import {EmbedUtility} from "./utility/EmbedUtility.mjs";
-import {Logger} from "./utility/Logger.mjs";
+import {SecurityUtility} from "../utility/SecurityUtility.mjs";
+import {StringUtility} from "../utility/StringUtility.mjs";
+import {DiscordUtility} from "../utility/DiscordUtility.mjs";
+import {EmbedUtility} from "../utility/EmbedUtility.mjs";
+import {Logger} from "../utility/Logger.mjs";
 
 /**
  * @type {{next: ((function(CustomMenu): Promise<void>)), back: ((function(CustomMenu): Promise<void>))}}
@@ -40,7 +39,7 @@ export class CustomMenu
     Interaction
     /** @type {EmbedBuilder[]} */
     Pages
-    /** @type {{text: string, url: string, color: "PRIMARY" | "SECONDARY" | "SUCCESS" | "DANGER" | "LINK" | ButtonStyle,
+    /** @type {{text: string, url: string, color: ButtonStyle,
      * emoji: APIMessageComponentEmoji, disabled: boolean, function(CustomMenu): Function, disableOnUse: boolean, disableAllOnUse: boolean, closeOnUse: Integer}[][]} */
     Actions
     /** @type {{label: string, description: string, emoji: string}[]} */
@@ -59,7 +58,7 @@ export class CustomMenu
      * Custom menu constructor
      * @param interaction {MessageComponentInteraction}
      * @param pages {EmbedBuilder[]}
-     * @param actions {{text: string, url: string, color: "PRIMARY" | "SECONDARY" | "SUCCESS" | "DANGER" | "LINK" | ButtonStyle,
+     * @param actions {{text: string, url: string, color: ButtonStyle,
      * emoji: APIMessageComponentEmoji, disabled: boolean, function(CustomMenu): Function, disableOnUse: boolean, disableAllOnUse: boolean, closeOnUse: Integer}[][]}
      * @param menuPages {{label: string, description: string, emoji: string}[]}
      */
@@ -82,7 +81,6 @@ export class CustomMenu
         this.Page = 0;
         this.CurrentPage = this.Pages[this.Page];
         this.CurrentMenuPage = 0;
-        this.Id = v4();
     }
 
     launchMenu()

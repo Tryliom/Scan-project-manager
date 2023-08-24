@@ -6,6 +6,8 @@ import {Logger} from "../models/utility/Logger.mjs";
 
 export class ScanProjectManager
 {
+    /** @type {ScanProjectManager} */
+    static Instance
     /** @type {CommandController} */
     CommandCenter
     /** @type {DataController} */
@@ -15,10 +17,11 @@ export class ScanProjectManager
 
     constructor()
     {
+        ScanProjectManager.Instance = this;
         this.CommandCenter = new CommandController();
-        this.DataCenter = new DataController(this);
+        this.DataCenter = new DataController();
 
-        this.CommandCenter.AssignScanProjectManager(this);
+        this.CommandCenter.Initialize();
         this.DataCenter.Backup();
 
         setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);

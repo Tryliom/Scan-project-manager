@@ -1,5 +1,6 @@
 import {SlashCommandBuilder, AutocompleteInteraction, Client} from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
+import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
 
 export class Command
 {
@@ -31,11 +32,8 @@ export class Command
         this.Description = description;
         this.Admin = admin;
         this.OnlyProjectChannel = onlyProjectChannel;
-    }
 
-    AssignScanProjectManager(scanProjectManager)
-    {
-        this._scanProjectManager = scanProjectManager;
+        this._scanProjectManager = ScanProjectManager.Instance;
         this._commandController = this._scanProjectManager.CommandCenter;
         this._client = this._scanProjectManager.DiscordClient;
     }

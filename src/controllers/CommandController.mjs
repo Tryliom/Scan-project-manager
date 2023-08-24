@@ -5,15 +5,14 @@ import {Help} from "../models/command/commands/Help.mjs";
 import {SecurityUtility} from "../models/utility/SecurityUtility.mjs";
 import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
+import {ScanProjectManager} from "./ScanProjectManager.mjs";
 
 export class CommandController
 {
-    /** @type {ScanProjectManager} */
-    _scanProjectManager
     /** @type {Command[]} */
     Commands
 
-    constructor()
+    Initialize()
     {
         // Create all commands to be used
         this.Commands =
@@ -22,21 +21,11 @@ export class CommandController
         ];
     }
 
-    AssignScanProjectManager(scanProjectManager)
-    {
-        this._scanProjectManager = scanProjectManager;
-
-        for (let command of this.Commands)
-        {
-            command.AssignScanProjectManager(scanProjectManager);
-        }
-    }
-
     async RefreshSlashCommands() {
         const rest = new REST({version: '10'}).setToken(process.env.token);
 
         await rest.put(
-            Routes.applicationCommands(this._scanProjectManager.DiscordClient.user.id),
+            Routes.applicationCommands(ScanProjectManager.Instance.DiscordClient.user.id),
             {
                 body: this.Commands.map(command => command.AsSlashCommand())
             },
@@ -48,7 +37,7 @@ export class CommandController
         {
             if (command.Name !== interaction.commandName) continue;
 
-            this._scanProjectManager.DataCenter.InitData(interaction);
+            ScanProjectManager.Instance.DataCenter.InitData(interaction);
 
             if (command.Admin && !SecurityUtility.IsAdmin(interaction))
             {
@@ -57,7 +46,7 @@ export class CommandController
                     `You are not the admin of this bot.`
                 ))
             }
-            else if (command.OnlyProjectChannel && !this._scanProjectManager.DataCenter.GetProjectFromChannel(interaction))
+            else if (command.OnlyProjectChannel && !ScanProjectManager.Instance.DataCenter.GetProjectFromChannel(interaction))
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Not in project channel",
