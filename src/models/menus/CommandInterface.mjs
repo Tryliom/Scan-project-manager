@@ -30,7 +30,7 @@ export class CommandInterface
     Interaction
     /**
      * @brief The last interaction that was made by the user
-     * @type {ButtonInteraction | SelectMenuInteraction | null} */
+     * @type {CommandInteraction | null} */
     LastInteraction
     /** @type {[{onMenuClick: Function, getList: Function, options: {label: Function, value: Function}, placeholder: string}], []} */
     MenuList
@@ -125,6 +125,8 @@ export class CommandInterface
     async UpdateMsg(content = null)
     {
         const interaction = this.LastInteraction || this.Interaction;
+
+        if (this.IgnoreInteractions) return;
 
         if (this.Error !== "")
         {

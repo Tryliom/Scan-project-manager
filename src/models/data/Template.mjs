@@ -11,9 +11,16 @@ export class Template
 
     constructor()
     {
-        this.Name = "";
-        this.Description = "";
-        this.Roles = [];
+        this.Name = "Default template";
+        this.Description = "A default template.";
+        this.Roles =
+        [
+            new ProjectRole().FromJson({Name: "Clean", Users: []}),
+            new ProjectRole().FromJson({Name: "Translation", Users: []}),
+            new ProjectRole().FromJson({Name: "Check", Users: []}),
+            new ProjectRole().FromJson({Name: "Edit", Users: []}),
+            new ProjectRole().FromJson({Name: "Quality check", Users: []})
+        ];
     }
 
     FromJson(data)

@@ -173,4 +173,14 @@ export class DataController
 
         return this._servers[interaction.guildId].Projects;
     }
+
+    /**
+     * @brief Add a template to the server where the interaction was made.
+     */
+    AddTemplate(interaction, template)
+    {
+        this.CreateServerIfNotExist(interaction.guildId);
+
+        this._servers[interaction.guildId].Templates.push(template);
+    }
 }

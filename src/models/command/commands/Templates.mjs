@@ -4,6 +4,8 @@ import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
+import {TemplateEditor} from "../../menus/interfaces/TemplateEditor.mjs";
+import {Template} from "../../data/Template.mjs";
 
 export class Templates extends Command
 {
@@ -30,7 +32,8 @@ class TemplateManager extends CommandInterface
 {
     _menu = Menu.Home;
 
-    constructor(interaction) {
+    constructor(interaction)
+    {
         super(interaction);
 
         this.SetMenuList([]);
@@ -56,6 +59,27 @@ class TemplateManager extends CommandInterface
         return super.ConstructComponents();
     }
 
+    async OnButton(interaction)
+    {
+        if (interaction.customId === "templates_create")
+        {
+            this.IgnoreInteractions = true;
+
+            await new TemplateEditor(this.Interaction, interaction, new Template(), (template, lastInteraction) =>
+                {
+                    if (template)
+                    {
+                        ScanProjectManager.Instance.DataCenter.AddTemplate(this.Interaction, template);
+                    }
+
+                    this.IgnoreInteractions = false;
+                    this.LastInteraction = lastInteraction;
+                    this.UpdateMsg();
+                }
+            ).Start();
+        }
+    }
+
     // Home
 
     GetHomeEmbed()
@@ -67,7 +91,7 @@ class TemplateManager extends CommandInterface
 
         embed.addFields([
             {name: `ℹ️  Info`, value: "Templates are used to create projects. They contain the role names and people assigned to them."},
-            { name: '\u200b', value: '\u200b'},
+            {name: '\u200b', value: '\u200b'},
             {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.List)}  List`, value: "List all your templates to edit them."},
             {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Add)}  Create`, value: "Create a new template."},
             {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Import)}  Import`, value: "Import a template from your projects."}
