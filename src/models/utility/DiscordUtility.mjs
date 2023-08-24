@@ -7,11 +7,12 @@ export class DiscordUtility
      * Reply to an interaction, automatically choose reply or update
      * @param interaction {MessageComponentInteraction, ButtonInteraction, SelectMenuInteraction}
      * @param content {{embeds, content, components}, EmbedBuilder}
+     * @param ephemeral {boolean} Whether the message should be ephemeral or not (default: false)
      * @returns {Promise<void>}
      */
-    static async Reply(interaction, content)
+    static async Reply(interaction, content, ephemeral = false)
     {
-        content = EmbedUtility.FormatMessageContent(content);
+        content = EmbedUtility.FormatMessageContent(content, ephemeral);
 
         try
         {

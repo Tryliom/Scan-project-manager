@@ -72,9 +72,10 @@ export class EmbedUtility
     /**
      * Format content to match content of a message
      * @param content {{embeds, content, components}, EmbedBuilder}
-     * @returns {{embeds, content, components}}
+     * @param ephemeral {boolean} Whether the message should be ephemeral or not (default: false)
+     * @returns {{embeds, content, components, ephemeral}}
      */
-    static FormatMessageContent(content)
+    static FormatMessageContent(content, ephemeral = false)
     {
         if (content instanceof EmbedBuilder)
         {
@@ -86,6 +87,7 @@ export class EmbedUtility
         }
 
         if (!content.components) content.components = [];
+        if (ephemeral) content.ephemeral = true;
 
         return content;
     }
