@@ -5,9 +5,17 @@ export class Work
     /** @type {string} */
     ProjectId = ""
 
-    constructor(data)
+    constructor()
+    {
+        this.ServerId = "";
+        this.ProjectId = "";
+    }
+
+    FromJson(data)
     {
         this.ServerId = data.ServerId;
         this.ProjectId = data.ProjectId;
+
+        return this;
     }
 }

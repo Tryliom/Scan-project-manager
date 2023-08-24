@@ -61,14 +61,14 @@ export class DataController
 
             for (const work of works)
             {
-                this._users[userId].push(new Work(work));
+                this._users[userId].push(new Work().FromJson(work));
             }
         }
 
         // Convert data to Server objects
         for (const serverId in this._servers)
         {
-            this._servers[serverId] = new Server(this._servers[serverId]);
+            this._servers[serverId] = new Server().FromJson(this._servers[serverId]);
         }
     }
 
@@ -123,7 +123,7 @@ export class DataController
     {
         if (this._servers[serverId] === undefined)
         {
-            this._servers[serverId] = Object.create(Server.prototype);
+            this._servers[serverId] = new Server();
         }
     }
 

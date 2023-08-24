@@ -49,7 +49,23 @@ export class Project
      * @type {Date} */
     LastActionDate = new Date()
 
-    constructor(data)
+    constructor()
+    {
+        this.Title = "";
+        this.Description = "";
+        this.ImageLink = "";
+        this.Links = [];
+        this.ChannelId = "";
+        this.Notify = NotifyType.channel;
+        this.AutoTask = false;
+        this.ProjectManagers = [];
+        this.Roles = [];
+        this.Tasks = [];
+        this.LastTaskDone = "";
+        this.LastActionDate = new Date();
+    }
+
+    FromJson(data)
     {
         this.Title = data.Title;
         this.Description = data.Description;
@@ -66,17 +82,19 @@ export class Project
 
         for (const link of data.Links)
         {
-            this.Links.push(new Link(link));
+            this.Links.push(new Link().FromJson(link));
         }
 
         for (const role of data.Roles)
         {
-            this.Roles.push(new ProjectRole(role));
+            this.Roles.push(new ProjectRole().FromJson(role));
         }
 
         for (const task of data.Tasks)
         {
-            this.Tasks.push(new Task(task));
+            this.Tasks.push(new Task().FromJson(task));
         }
+
+        return this;
     }
 }

@@ -5,9 +5,17 @@ export class Link
     /** @type {string} */
     Link = ""
 
-    constructor(data)
+    constructor()
+    {
+        this.Title = "";
+        this.Link = "";
+    }
+
+    FromJson(data)
     {
         this.Title = data.Title;
         this.Link = data.Link;
+
+        return this;
     }
 }

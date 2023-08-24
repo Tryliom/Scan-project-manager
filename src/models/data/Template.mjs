@@ -5,13 +5,20 @@ export class Template
     /** @type {ProjectRole[]} */
     Roles = []
 
-    constructor(data)
+    constructor()
+    {
+        this.Roles = [];
+    }
+
+    FromJson(data)
     {
         this.Roles = [];
 
         for (const role of data.Roles)
         {
-            this.Roles.push(new ProjectRole(role));
+            this.Roles.push(new ProjectRole().FromJson(role));
         }
+
+        return this;
     }
 }

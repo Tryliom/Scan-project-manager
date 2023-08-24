@@ -8,19 +8,27 @@ export class Server
     /** @type {Object<string, Project>} */
     Projects = {}
 
-    constructor(data)
+    constructor()
+    {
+        this.Templates = [];
+        this.Projects = {};
+    }
+
+    FromJson(data)
     {
         this.Templates = [];
         this.Projects = {};
 
         for (const template of data.Templates)
         {
-            this.Templates.push(new Template(template));
+            this.Templates.push(new Template().FromJson(template));
         }
 
         for (const projectId in data.Projects)
         {
-            this.Projects[projectId] = new Project(data.Projects[projectId]);
+            this.Projects[projectId] = new Project().FromJson(data.Projects[projectId]);
         }
+
+        return this;
     }
 }
