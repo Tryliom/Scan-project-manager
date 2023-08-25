@@ -19,7 +19,8 @@ export class EmojiUtility
         Import: "Import",
         List: "List",
         Up: "Up",
-        Down: "Down"
+        Down: "Down",
+        Left: "Left",
     };
 
     static GetEmoji(emojiName)

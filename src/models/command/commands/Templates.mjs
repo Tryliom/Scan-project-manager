@@ -66,16 +66,16 @@ class TemplateManager extends CommandInterface
             this.IgnoreInteractions = true;
 
             await new TemplateEditor(this.Interaction, interaction, new Template(), (template, lastInteraction) =>
+            {
+                if (template)
                 {
-                    if (template)
-                    {
-                        ScanProjectManager.Instance.DataCenter.AddTemplate(this.Interaction, template);
-                    }
-
-                    this.IgnoreInteractions = false;
-                    this.LastInteraction = lastInteraction;
-                    this.UpdateMsg();
+                    ScanProjectManager.Instance.DataCenter.AddTemplate(this.Interaction, template);
                 }
+
+                this.IgnoreInteractions = false;
+                this.LastInteraction = lastInteraction;
+                this.UpdateMsg();
+            }
             ).Start();
         }
     }

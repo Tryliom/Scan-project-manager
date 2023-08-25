@@ -1,6 +1,6 @@
 import APIMessageComponentEmoji, {
     ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder,
-    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction
+    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction, Events
 } from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
@@ -43,6 +43,8 @@ export class CommandInterface
     ConfirmationMessage
     /** @type {boolean} */
     IgnoreInteractions
+    /** @type {boolean} */
+    _modalSubmit
 
     /** @type {InteractionCollector} */
     Collector
@@ -94,6 +96,34 @@ export class CommandInterface
     async Start()
     {
         const filter = (interaction) => interaction.user.id === this.Interaction.user.id || interaction.user.id === process.env.creatorId;
+        const onCollect = async (interaction) =>
+        {
+            this.LastInteraction = interaction;
+
+            if (this.IgnoreInteractions) return;
+
+            if (interaction.isModalSubmit()) await this.OnModalSubmit(interaction);
+            else if (interaction.isButton()) await this.OnButtonClick(interaction);
+            else if (interaction.isAnySelectMenu()) await this.OnMenuClick(interaction);
+
+            await DiscordUtility.Defer(interaction);
+
+            this.Collector.resetTimer({ time: CollectorTime });
+
+            if (this._modalSubmit)
+            {
+                const submit = await this.LastInteraction.awaitModalSubmit({time: CollectorTime, filter: filter});
+
+                if (submit)
+                {
+                    this._modalSubmit = false;
+
+                    await this.OnModalSubmit(submit);
+                }
+
+                await DiscordUtility.Defer(submit);
+            }
+        };
 
         await this.UpdateMsg();
 
@@ -101,20 +131,7 @@ export class CommandInterface
         const message = await currentInteraction.fetchReply();
 
         this.Collector = message.createMessageComponentCollector({ filter, time: CollectorTime });
-        this.Collector.on("collect", async interaction =>
-        {
-            this.LastInteraction = interaction;
-
-            if (this.IgnoreInteractions) return;
-
-            if (interaction.isButton()) await this.OnButtonClick(interaction);
-            else if (interaction.isAnySelectMenu()) await this.OnMenuClick(interaction);
-            else if (interaction.isModalSubmit()) await this.OnModalSubmit(interaction);
-
-            await DiscordUtility.Defer(interaction);
-
-            this.Collector.resetTimer({ time: CollectorTime });
-        });
+        this.Collector.on("collect", async interaction => { await onCollect(interaction); });
     }
 
     /**
@@ -148,6 +165,8 @@ export class CommandInterface
     async ShowModal(modal)
     {
         const interaction = this.LastInteraction || this.Interaction;
+
+        this._modalSubmit = true;
 
         await interaction.showModal(modal);
     }
@@ -211,6 +230,12 @@ export class CommandInterface
         await this.UpdateMsg();
     }
 
+    /**
+     * Event when a modal is submitted
+     * @param interaction {ModalSubmitInteraction}
+     * @returns {Promise<void>}
+     * @constructor
+     */
     async OnModal(interaction) {}
 
     async StopCollector(closeMessage = true)
