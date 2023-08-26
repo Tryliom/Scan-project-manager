@@ -15,6 +15,9 @@ export class ScanProjectManager
     /** @type {Client} */
     DiscordClient
 
+    /** @type {Object<string, Function>[]} */
+    _events = []
+
     constructor()
     {
         ScanProjectManager.Instance = this;
@@ -30,7 +33,8 @@ export class ScanProjectManager
         this.DiscordClient = new Client({intents: [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.DirectMessages
+            GatewayIntentBits.DirectMessages,
+            GatewayIntentBits.GuildMembers
         ]});
 
         this.DiscordClient.login(process.env.token).catch((reason) =>
@@ -67,7 +71,8 @@ export class ScanProjectManager
                 {
                     Logger.Log(`Autocomplete`, error);
                 }
-            } else if (interaction.isCommand()) {
+            }
+            else if (interaction.isCommand()) {
                 try
                 {
                     await this.CommandCenter.OnCommand(interaction);
@@ -77,7 +82,38 @@ export class ScanProjectManager
                     Logger.Log(`Command`, error);
                 }
             }
+            else
+            {
+                for (let i = 0; i < this._events.length; i++)
+                {
+                    try
+                    {
+                        await this._events[i].event(interaction);
+                    }
+                    catch (error)
+                    {
+                        Logger.Log(error);
+                    }
+                }
+            }
         });
+    }
+
+    SubscribeToEvent(id, event)
+    {
+        this._events.push({id: id, event: event});
+    }
+
+    UnsubscribeFromEvent(id)
+    {
+        for (let i = 0; i < this._events.length; i++)
+        {
+            if (this._events[i].id === id)
+            {
+                this._events.splice(i, 1);
+                return;
+            }
+        }
     }
 
     async EmergencyExit(reason)

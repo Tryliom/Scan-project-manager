@@ -1,10 +1,13 @@
 import APIMessageComponentEmoji, {
     ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder,
-    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction, Events
+    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction, Events, SelectMenuBuilder,
+    StringSelectMenuOptionBuilder, UserSelectMenuBuilder
 } from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
 import {EmbedUtility} from "../utility/EmbedUtility.mjs";
+import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
+import {v4} from "uuid";
 
 const CollectorTime = 90 * 60000;
 
@@ -32,7 +35,7 @@ export class CommandInterface
      * @brief The last interaction that was made by the user
      * @type {CommandInteraction | null} */
     LastInteraction
-    /** @type {[{onMenuClick: Function, getList: Function, options: {label: Function, value: Function}, placeholder: string}], []} */
+    /** @type {[{onMenuClick: Function<string[]>, getList: Function, options: {label: Function, value: Function}, placeholder: string, minValues: number, maxValues: number}] | []} */
     MenuList
     /** @type {boolean} */
     Ephemeral
@@ -45,9 +48,12 @@ export class CommandInterface
     IgnoreInteractions
     /** @type {boolean} */
     _modalSubmit
-
-    /** @type {InteractionCollector} */
-    Collector
+    /** @type {Function} */
+    _collector
+    /** @type {string} */
+    _id
+    /** @type {boolean} */
+    _closed
 
     /** @type {Object<string, number>} */
     _menus = {}
@@ -65,13 +71,13 @@ export class CommandInterface
         this.Error = "";
         this.ConfirmationMessage = "";
         this.IgnoreInteractions = false;
+
+        this._id = v4();
     }
 
     SetLastInteraction(interaction)
     {
         this.LastInteraction = interaction;
-
-        return this;
     }
 
     SetMenuList(menuList)
@@ -82,22 +88,20 @@ export class CommandInterface
         {
             this._menus[`menu${this.MenuList.indexOf(item)}`] = 0;
         }
-
-        return this;
     }
 
     SetEphemeral(ephemeral)
     {
         this.Ephemeral = ephemeral;
-
-        return this;
     }
 
     async Start()
     {
         const filter = (interaction) => interaction.user.id === this.Interaction.user.id || interaction.user.id === process.env.creatorId;
-        const onCollect = async (interaction) =>
+        this._collector = async (interaction) =>
         {
+            if (!filter(interaction)) return;
+
             this.LastInteraction = interaction;
 
             if (this.IgnoreInteractions) return;
@@ -107,8 +111,6 @@ export class CommandInterface
             else if (interaction.isAnySelectMenu()) await this.OnMenuClick(interaction);
 
             await DiscordUtility.Defer(interaction);
-
-            this.Collector.resetTimer({ time: CollectorTime });
 
             if (this._modalSubmit)
             {
@@ -127,11 +129,7 @@ export class CommandInterface
 
         await this.UpdateMsg();
 
-        const currentInteraction = this.LastInteraction || this.Interaction;
-        const message = await currentInteraction.fetchReply();
-
-        this.Collector = message.createMessageComponentCollector({ filter, time: CollectorTime });
-        this.Collector.on("collect", async interaction => { await onCollect(interaction); });
+        ScanProjectManager.Instance.SubscribeToEvent(this._id, this._collector);
     }
 
     /**
@@ -156,10 +154,8 @@ export class CommandInterface
                 .setDescription(`${this.ConfirmationMessage}\n\nYou will return to the menu after 5sec`);
         }
 
-        if (this.Collector && !this.Collector.ended || !this.Collector)
-        {
-            await DiscordUtility.Reply(interaction, this.GetContent(content), this.Ephemeral);
-        }
+
+        if (!this._closed) await DiscordUtility.Reply(interaction, this.GetContent(content), this.Ephemeral);
     }
 
     async ShowModal(modal)
@@ -210,7 +206,6 @@ export class CommandInterface
     async OnMenuClick(interaction)
     {
         await this.OnMenu(interaction);
-
         await this.OnMenuInteraction(interaction);
         await this.UpdateMsg();
     }
@@ -250,7 +245,8 @@ export class CommandInterface
             await this.UpdateMsg(this.ConstructEmbed());
         }
 
-        this.Collector.stop();
+        ScanProjectManager.Instance.UnsubscribeFromEvent(this._id);
+        this._closed = true;
     }
 
     /**
@@ -339,14 +335,14 @@ export class CommandInterface
      *
      * @param page If this doesn't have more than 1 page, put 0
      * @param list {*[]}
-     * @param option {{label: Function, value: Function, emoji: Function | undefined, description: Function | undefined, condition: Function | undefined}}
+     * @param option {{label: Function, value: Function, emoji: Function | undefined, description: Function | undefined, condition: Function | undefined, default: Function | undefined}}
      * @returns {*[]}
      */
     GetOptions(page, list, option = {label: (item) => item, value: (item) => item})
     {
         const optionList = [];
 
-        if (page > 0) optionList.push({label: "Less...", emoji: "⬅", value: "less"});
+        if (page > 0) optionList.push({label: "Less...", emoji: {name: "⬅"}, value: "less"});
 
         let minElements = 0;
 
@@ -359,25 +355,31 @@ export class CommandInterface
 
             if (optionList.length === 24)
             {
-                optionList.push({label: "More...", emoji: "➡", value: "more"})
+                optionList.push({label: "More...", emoji: {name: "➡"}, value: "more"})
                 break;
             }
             else if (!option.condition || option.condition(item))
             {
-                const newOption = {label: StringUtility.CutText(option.label(item), 100), value: `${option.value(item)}`};
+                const builder =
+                {
+                    label: StringUtility.CutText(option.label(item), 25),
+                    value: `${option.value(item)}`
+                };
 
                 if (option.emoji)
                 {
                     const emoji = option.emoji(item);
-                    if (emoji) newOption.emoji = emoji;
+                    if (emoji) builder.emoji = emoji;
                 }
 
                 if (option.description)
                 {
-                    newOption.description = StringUtility.CutText(option.description(item), 100);
+                    builder.description = StringUtility.CutText(option.description(item), 50);
                 }
 
-                optionList.push(newOption);
+                if (option.default) builder.default = option.default(item);
+
+                optionList.push(builder);
             }
         }
 
@@ -402,7 +404,7 @@ export class CommandInterface
                 }
                 else
                 {
-                    await item.onMenuClick(interaction.values[0]);
+                    await item.onMenuClick(interaction.values);
                     this.OnMenuPageChange(index);
                 }
             }
@@ -414,18 +416,23 @@ export class CommandInterface
         for (let item of this.MenuList)
         {
             const i = this.MenuList.indexOf(item);
+            const options = this.GetOptions(this._menus[`menu${i}`], item.getList(), item.options);
+            const minValues = Math.min(item.minValues === undefined ? 1 : item.minValues, options.length);
+            const maxValues = Math.min(item.maxValues === undefined ? 1 : item.maxValues, options.length);
 
             if (index === null || index === i)
             {
                 components.push(
                     new ActionRowBuilder()
                         .addComponents(
-                            new StringSelectMenuBuilder()
-                                .setCustomId(`menu${i}`)
-                                .setPlaceholder(item.placeholder)
-                                .setMinValues(1)
-                                .setMaxValues(1)
-                                .addOptions(...this.GetOptions(this._menus[`menu${i}`], item.getList(), item.options))
+                            new StringSelectMenuBuilder(
+                                {
+                                    custom_id: `menu${i}`,
+                                    placeholder: item.placeholder,
+                                    min_values: minValues,
+                                    max_values: maxValues,
+                                    options: options
+                                })
                         )
                 );
             }

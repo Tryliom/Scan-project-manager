@@ -1,10 +1,17 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, ModalBuilder, TextInputBuilder, TextInputStyle} from "discord.js";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle} from "discord.js";
 
 import {CommandInterface} from "../CommandInterface.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {Template} from "../../data/Template.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ProjectRole} from "../../data/ProjectRole.mjs";
+import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
+
+const SelectMenus =
+{
+    Users: 0,
+    SectionMover: 1
+}
 
 export class TemplateEditor extends CommandInterface
 {
@@ -30,6 +37,35 @@ export class TemplateEditor extends CommandInterface
         super(interaction);
 
         this.SetLastInteraction(lastInteraction);
+        this.SetMenuList([
+            // Users list
+            {
+                onMenuClick: values =>
+                {
+                    // Remove all users from the section
+                    this._template.Roles[this._sectionIndex].Users = [];
+
+                    // Add the selected users to the section
+                    for (let value of values)
+                    {
+                        this._template.Roles[this._sectionIndex].Users.push(value);
+                    }
+                },
+                getList: () => this.GetUsersToAdd(),
+                options:
+                {
+                    /** @param {User} item */
+                    label: (item) => item.globalName,
+                    /** @param {User} item */
+                    value: (item) => item.id,
+                    /** @param {User} item */
+                    default: (item) => this._template.Roles[this._sectionIndex].Users.includes(item.id)
+                },
+                placeholder: "Select people..",
+                maxValues: 10,
+                minValues: 0
+            },
+        ]);
 
         // Make a copy of the template
         this._template = new Template().FromJson(template);
@@ -138,7 +174,12 @@ export class TemplateEditor extends CommandInterface
             )
         );
 
-        //TODO: Show menu buttons to add or remove users from the section, users already added show up first, can select up to 10 users
+        if (this._template.Roles.length > 0)
+        {
+            this.AddMenuComponents(components, SelectMenus.Users);
+        }
+
+        //TODO: Show menu buttons to move sections First and below each other
 
         components.push(new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -307,5 +348,35 @@ export class TemplateEditor extends CommandInterface
             if (this._undoStack.length > 1) this._undoStack.pop();
             this._template = this._undoStack.pop();
         }
+    }
+
+    GetUsersToAdd()
+    {
+        // Get all users, first the ones already added
+        const users = [];
+        /** @type {Collection<Snowflake, GuildMember>} */
+        const allUsers = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(this.Interaction.guildId).members.cache;
+
+        for (let role of this._template.Roles)
+        {
+            const index = this._template.Roles.indexOf(role);
+
+            if (index !== this._sectionIndex) continue;
+
+            for (let userID of role.Users)
+            {
+                users.push(allUsers.find((user, id) => id === userID).user);
+            }
+        }
+
+        allUsers.forEach((guildMember, id) =>
+        {
+            if (users.findIndex(u => u.id === id) === -1 && !guildMember.user.bot)
+            {
+                users.push(guildMember.user);
+            }
+        });
+
+        return users;
     }
 }

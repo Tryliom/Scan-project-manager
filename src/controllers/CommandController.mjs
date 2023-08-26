@@ -1,4 +1,4 @@
-import {REST} from "discord.js";
+import {GuildMemberManager, REST} from "discord.js";
 import {Routes} from "discord-api-types/v10";
 
 import {SecurityUtility} from "../models/utility/SecurityUtility.mjs";
@@ -40,6 +40,12 @@ export class CommandController
             if (command.Name !== interaction.commandName) continue;
 
             ScanProjectManager.Instance.DataCenter.InitData(interaction);
+
+            if (interaction.guildId)
+            {
+                // Fetch guild data
+                await ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guildId).members.fetch();
+            }
 
             if (command.Admin && !SecurityUtility.IsAdmin(interaction))
             {
