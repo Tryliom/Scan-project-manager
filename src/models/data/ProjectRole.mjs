@@ -1,3 +1,5 @@
+import {EmojiUtility} from "../utility/EmojiUtility.mjs";
+
 export class ProjectRole
 {
     /** @type {string} */
@@ -19,19 +21,25 @@ export class ProjectRole
         return this;
     }
 
-    AddUser(userId)
+    GetSectionAsField(isSelected = false)
     {
-        if (!this.Users.includes(userId))
-        {
-            this.Users.push(userId);
-        }
-    }
+        const users = [];
 
-    RemoveUser(userId)
-    {
-        if (this.Users.includes(userId))
+        for (let userID of this.Users)
         {
-            this.Users.splice(this.Users.indexOf(userId), 1);
+            users.push(`<@${userID}>`);
         }
+
+        if (users.length === 0)
+        {
+            users.push("No user");
+        }
+
+        if (isSelected)
+        {
+            return `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${this.Name}**: ${users.join(", ")}`;
+        }
+
+        return `**${this.Name}**: ${users.join(", ")}`;
     }
 }

@@ -10,7 +10,13 @@ const SelectMenus =
 {
     Users: 0,
     SectionMover: 1
-}
+};
+
+const Menu =
+{
+    Editor: 0,
+    Info: 1,
+};
 
 export class TemplateEditor extends CommandInterface
 {
@@ -21,8 +27,14 @@ export class TemplateEditor extends CommandInterface
     _template
     /** @type {Template[]} */
     _undoStack = []
+
     /** @type {function (template: Template, lastInteraction: CommandInteraction)} */
     _onConfirm
+    /** @type {boolean} */
+    _onlyRoles = false
+
+    /** @type {Menu} */
+    _menu = Menu.Editor
 
     /**
      *
@@ -31,7 +43,7 @@ export class TemplateEditor extends CommandInterface
      * @param template {Template}
      * @param onConfirm {function (template: Template, lastInteraction: CommandInteraction)}
      */
-    constructor(interaction, lastInteraction, template, onConfirm)
+    constructor(interaction, lastInteraction, template, onConfirm, onlyRoles = false)
     {
         super(interaction);
 
@@ -49,6 +61,8 @@ export class TemplateEditor extends CommandInterface
                     {
                         this._template.Roles[this._sectionIndex].Users.push(value);
                     }
+
+                    this.SaveOldState();
                 },
                 placeholder: "Select people..",
                 maxValues: 5,
@@ -67,6 +81,8 @@ export class TemplateEditor extends CommandInterface
                     this._template.Roles.splice(indexToAttribute, 0, section);
 
                     this._sectionIndex = indexToAttribute === this._template.Roles.length ? indexToAttribute - 1 : indexToAttribute;
+
+                    this.SaveOldState();
                 },
                 getList: () =>
                 {
@@ -102,17 +118,41 @@ export class TemplateEditor extends CommandInterface
         // Make a copy of the template
         this._template = new Template().FromJson(template);
         this._onConfirm = onConfirm;
+        this._onlyRoles = onlyRoles;
+
         this.SaveOldState();
     }
 
     ConstructEmbed()
     {
-        const embed = EmbedUtility.GetNeutralEmbedMessage("Template Editor");
+        if (this._menu === Menu.Info)
+        {
+            const embed = EmbedUtility.GetNeutralEmbedMessage(this._onlyRoles ? "Help with role editor" : "Help about template editor");
+            const fields = [];
 
-        embed.addFields([
-            {name: "Name", value: this._template.Name},
-            {name: "Description", value: this._template.Description},
-        ]);
+            if (!this._onlyRoles)
+            {
+                fields.push({name: "Template", value: "Templates are used to create projects. They contain the role names and people assigned to them. Usually used for different teams."});
+                fields.push({name: "Name and description", value: "It's just a value to help you remember what the template is for. It's not used anywhere else."});
+            }
+
+            embed.addFields([
+                ...fields,
+                {name: "Sections", value: "Sections are the roles that will be created in the project. You can add or remove sections, and move them around. You can also assign people to them."}
+            ]);
+
+            return embed;
+        }
+
+        const embed = EmbedUtility.GetNeutralEmbedMessage(this._onlyRoles ? "Role editor" : "Template Editor");
+
+        if (!this._onlyRoles)
+        {
+            embed.addFields([
+                {name: "Name", value: this._template.Name},
+                {name: "Description", value: this._template.Description},
+            ]);
+        }
 
         embed.addFields([this._template.GetSectionsAsFields(this._sectionIndex)]);
 
@@ -121,29 +161,48 @@ export class TemplateEditor extends CommandInterface
 
     ConstructComponents()
     {
-        const components = [];
+        if (this._menu === Menu.Info)
+        {
+            return [
+                new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`return`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Return))
+                )
+            ];
+        }
 
-        components.push(
-            new ActionRowBuilder().addComponents(
+        const components = [];
+        const actions = new ActionRowBuilder();
+
+        if (!this._onlyRoles)
+        {
+            actions.addComponents(
                 new ButtonBuilder()
                     .setCustomId(`string_edit`)
                     .setLabel("Edit info")
                     .setStyle(ButtonStyle.Secondary)
-                    .setEmoji({name: "✏️"}),
-                new ButtonBuilder()
-                    .setCustomId(`section_edit`)
-                    .setLabel("Edit section name")
-                    .setStyle(ButtonStyle.Secondary)
                     .setEmoji({name: "✏️"})
-                    .setDisabled(this._template.Roles.length === 0),
-                new ButtonBuilder()
-                    .setCustomId(`undo`)
-                    .setLabel("Undo")
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji({name: "↩️"})
-                    .setDisabled(this._undoStack.length < 2)
-            )
+            );
+        }
+
+        actions.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`section_edit`)
+                .setLabel("Edit section name")
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji({name: "✏️"})
+                .setDisabled(this._template.Roles.length === 0),
+            new ButtonBuilder()
+                .setCustomId(`undo`)
+                .setLabel("Undo")
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji({name: "↩️"})
+                .setDisabled(this._undoStack.length < 2)
         );
+
+        components.push(actions);
         components.push(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -192,7 +251,12 @@ export class TemplateEditor extends CommandInterface
                 new ButtonBuilder()
                     .setCustomId(`confirm`)
                     .setStyle(ButtonStyle.Success)
-                    .setEmoji({name: "💾"})
+                    .setEmoji({name: "💾"}),
+                new ButtonBuilder()
+                    .setCustomId(`info`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji({name: "ℹ️"})
+
             )
         );
 
@@ -201,11 +265,22 @@ export class TemplateEditor extends CommandInterface
 
     async OnButton(interaction)
     {
+        if (this._menu === Menu.Info && interaction.customId === "return")
+        {
+            this._menu = Menu.Editor;
+
+            return;
+        }
+
         if (interaction.customId === "confirm" || interaction.customId === "return")
         {
             const template = interaction.customId === "return" ? null : this._template;
             await this.StopCollector(false);
             await this._onConfirm(template, this.LastInteraction);
+        }
+        else if (interaction.customId === "info")
+        {
+            this._menu = Menu.Info;
         }
 
         if (interaction.customId === "string_edit")

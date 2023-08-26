@@ -183,4 +183,16 @@ export class DataController
 
         this._servers[interaction.guildId].Templates.push(template);
     }
+
+    /**
+     * @brief Add a project to the server where the interaction was made.
+     */
+    AddProject(interaction, project)
+    {
+        this.CreateServerIfNotExist(interaction.guildId);
+
+        this._servers[interaction.guildId].Projects[project.Id] = project;
+
+        //TODO: If the project is auto task, start the task
+    }
 }

@@ -1,4 +1,3 @@
-import { Link } from "./Link.mjs";
 import {ProjectRole} from "./ProjectRole.mjs";
 import {Task} from "./Task.mjs";
 
@@ -24,8 +23,8 @@ export class Project
     Description = ""
     /** @type {string} */
     ImageLink = ""
-    /** @type {Link[]} */
-    Links = []
+    /** @type {string} */
+    Links = ""
     /** @type {string} */
     ChannelId = ""
     /** @type {NotifyType} */
@@ -51,10 +50,10 @@ export class Project
 
     constructor()
     {
-        this.Title = "";
-        this.Description = "";
+        this.Title = "Project name";
+        this.Description = "Project description";
         this.ImageLink = "";
-        this.Links = [];
+        this.Links = "";
         this.ChannelId = "";
         this.Notify = NotifyType.channel;
         this.AutoTask = false;
@@ -70,7 +69,7 @@ export class Project
         this.Title = data.Title;
         this.Description = data.Description;
         this.ImageLink = data.ImageLink;
-        this.Links = [];
+        this.Links = data.Links;
         this.ChannelId = data.ChannelId;
         this.Notify = data.Notify;
         this.AutoTask = data.AutoTask;
@@ -79,11 +78,6 @@ export class Project
         this.Tasks = [];
         this.LastTaskDone = data.LastTaskDone;
         this.LastActionDate = data.LastActionDate;
-
-        for (const link of data.Links)
-        {
-            this.Links.push(new Link().FromJson(link));
-        }
 
         for (const role of data.Roles)
         {
@@ -96,5 +90,27 @@ export class Project
         }
 
         return this;
+    }
+
+    AddToEmbed(embed)
+    {
+        const roles = this.Roles.map(value => value.GetSectionAsField()).join("\n\n");
+        const projectManagers = this.ProjectManagers.map(value => `<@${value}>`).join("\n");
+
+        embed.addFields([
+            {name: this.Title, value: this.Description},
+            {name: "Image link", value: this.ImageLink === "" ? "None" : this.ImageLink},
+            {name: "Links", value: this.Links === "" ? "None" : this.Links, inline: true},
+            {name: "Roles", value: roles === "" ? "None" : roles, inline: true},
+            {name: "\u200b", value: "\u200b"},
+            {name: "Project managers", value: projectManagers === "" ? "None" : projectManagers, inline: true},
+            {name: "Channel", value: `${this.ChannelId === "" ? "None" : `<#${this.ChannelId}>`}`, inline: true},
+            {name: "Notify", value: this.Notify._value, inline: true},
+            {name: "Auto chapter creation", value: this.AutoTask ? "✅" : "❌", inline: true},
+        ]);
+
+        if (this.ImageLink) embed.setImage(this.ImageLink);
+
+        return embed;
     }
 }

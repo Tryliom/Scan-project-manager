@@ -7,6 +7,7 @@ import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
 import {ScanProjectManager} from "./ScanProjectManager.mjs";
 import {Help} from "../models/command/commands/Help.mjs";
 import {Templates} from "../models/command/commands/Templates.mjs";
+import {Projects} from "../models/command/commands/Projects.mjs";
 
 export class CommandController
 {
@@ -19,7 +20,8 @@ export class CommandController
         this.Commands =
         [
             new Help(),
-            new Templates()
+            new Templates(),
+            new Projects()
         ];
     }
 

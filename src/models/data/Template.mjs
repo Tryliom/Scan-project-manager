@@ -45,25 +45,8 @@ export class Template
         for (let role of this.Roles)
         {
             const index = this.Roles.indexOf(role);
-            const users = [];
-            let name = role.Name;
 
-            if (index === indexSelected)
-            {
-                name = `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${name}**`;
-            }
-
-            for (let userID of role.Users)
-            {
-                users.push(`<@${userID}>`);
-            }
-
-            if (users.length === 0)
-            {
-                users.push("No users");
-            }
-
-            sections.push(`${name}: ${users.join("\n")}`);
+            sections.push(role.GetSectionAsField(index === indexSelected));
         }
 
         if (sections.length === 0)

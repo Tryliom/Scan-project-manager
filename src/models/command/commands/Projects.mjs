@@ -1,17 +1,19 @@
 import {Command} from "../Command.mjs";
 import {CommandInterface} from "../../menus/CommandInterface.mjs";
-import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
+import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 import {TemplateEditor} from "../../menus/interfaces/TemplateEditor.mjs";
 import {Template} from "../../data/Template.mjs";
+import {ProjectEditor} from "../../menus/interfaces/ProjectEditor.mjs";
+import {Project} from "../../data/Project.mjs";
 
-export class Templates extends Command
+export class Projects extends Command
 {
     constructor()
     {
-        super("templates", "", 0, "Manage templates.");
+        super("projects", "", 0, "Manage projects.");
 
         this.SetOnlyInServer();
         this.SetAdmin();
@@ -19,7 +21,7 @@ export class Templates extends Command
 
     async Run(interaction)
     {
-        await new TemplateManager(interaction).Start();
+        await new ProjectManager(interaction).Start();
     }
 }
 
@@ -29,7 +31,7 @@ const Menu =
     List: 1,
 }
 
-class TemplateManager extends CommandInterface
+class ProjectManager extends CommandInterface
 {
     /** @type {Menu} */
     _menu = Menu.Home;
@@ -45,13 +47,14 @@ class TemplateManager extends CommandInterface
                 onMenuClick: values => this.page = parseInt(values[0]),
                 getList: () =>
                 {
-                    const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
+                    const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
                     const list = [];
 
-                    for (let template of templates)
+                    for (let projectId in projects)
                     {
-                        const index = templates.indexOf(template);
-                        const option = {label: template.Name, description: template.Description, value: index};
+                        const project = projects[projectId];
+                        const index = Object.keys(projects).indexOf(projectId);
+                        const option = {label: project.Name, description: project.Description, value: index};
 
                         if (index === this.page) option.default = true;
 
@@ -61,7 +64,7 @@ class TemplateManager extends CommandInterface
                     return list;
                 },
                 options: {label: item => item.label, description: item => item.description, value: item => item.value, default: item => item.default || false},
-                placeholder: "Select template.."
+                placeholder: "Select project.."
             }
         ]);
     }
@@ -95,17 +98,14 @@ class TemplateManager extends CommandInterface
 
     GetHomeEmbed()
     {
-        const embed = EmbedUtility.GetNeutralEmbedMessage("Template Manager");
-        const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
+        const embed = EmbedUtility.GetNeutralEmbedMessage("Project Manager");
+        const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
 
-        embed.setDescription(`You have ${templates.length} templates.`);
+        embed.setDescription(`You have ${Object.keys(projects).length} projects.`);
 
         embed.addFields([
-            {name: `ℹ️  Info`, value: "Templates are used to create projects. They contain the role names and people assigned to them. Usually used for different teams."},
-            {name: '\u200b', value: '\u200b'},
-            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.List)}  List`, value: "List all your templates to edit them."},
-            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Add)}  Create`, value: "Create a new template."},
-            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Import)}  Import`, value: "Import a template from your projects."}
+            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.List)}  List`, value: "List all your projects to edit them."},
+            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Add)}  Create`, value: "Create a new project."}
         ]);
 
         return embed;
@@ -113,29 +113,22 @@ class TemplateManager extends CommandInterface
 
     GetHomeComponents()
     {
-        const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
         const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
         const components = [];
 
         components.push(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`templates_list`)
+                    .setCustomId(`projects_list`)
                     .setLabel("List")
-                    .setDisabled(templates.length === 0)
+                    .setDisabled(Object.keys(projects).length === 0)
                     .setStyle(ButtonStyle.Secondary)
                     .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.List)),
                 new ButtonBuilder()
-                    .setCustomId(`templates_create`)
+                    .setCustomId(`projects_create`)
                     .setLabel("Create")
                     .setStyle(ButtonStyle.Secondary)
-                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Add)),
-                new ButtonBuilder()
-                    .setCustomId(`templates_import`)
-                    .setLabel("Import")
-                    .setDisabled(Object.keys(projects).length === 0)
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Import))
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Add))
             )
         );
         components.push(this.GetCloseButton());
@@ -145,15 +138,19 @@ class TemplateManager extends CommandInterface
 
     async OnButtonHome(interaction)
     {
-        if (interaction.customId === "templates_create")
+        if (interaction.customId === "projects_create")
         {
             this.IgnoreInteractions = true;
 
-            await new TemplateEditor(this.Interaction, interaction, new Template(), (template, lastInteraction) =>
+            const newProject = new Project();
+
+            newProject.ChannelId = interaction.channelId;
+
+            await new ProjectEditor(this.Interaction, interaction, newProject, (project, lastInteraction) =>
                 {
-                    if (template)
+                    if (project)
                     {
-                        ScanProjectManager.Instance.DataCenter.AddTemplate(this.Interaction, template);
+                        ScanProjectManager.Instance.DataCenter.AddProject(this.Interaction, project);
                     }
 
                     this.IgnoreInteractions = false;
@@ -162,7 +159,7 @@ class TemplateManager extends CommandInterface
                 }
             ).Start();
         }
-        else if (interaction.customId === "templates_list")
+        else if (interaction.customId === "projects_list")
         {
             this._menu = Menu.List;
             this.page = 0;
@@ -173,45 +170,46 @@ class TemplateManager extends CommandInterface
 
     GetListEmbed()
     {
-        const embed = EmbedUtility.GetNeutralEmbedMessage("Template Manager - List");
-        const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
+        const embed = EmbedUtility.GetNeutralEmbedMessage("Project Manager - List");
+        const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
+        /** @type {number} */
+        const projectLength = Object.keys(projects).length;
 
-        if (templates.length === 0) return embed.setDescription("You have no templates.");
+        if (projectLength === 0) return embed.setDescription("You have no projects.");
 
-        const template = templates[this.page];
+        /** @type {Project} */
+        const project = projects[Object.keys(projects)[this.page]];
 
-        embed.addFields([
-            {name: template.Name, value: template.Description},
-            template.GetSectionsAsFields()
-        ]);
+        project.AddToEmbed(embed);
 
-        embed.setFooter({text: `Page ${this.page + 1}/${templates.length}`});
+        embed.setFooter({text: `Page ${this.page + 1}/${projectLength}`});
 
         return embed;
     }
 
     GetListComponents()
     {
-        const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
+        const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
+        const projectLength = Object.keys(projects).length;
         const components = [];
 
-        if (templates.length !== 0)
+        if (projectLength !== 0)
         {
             components.push(
                 new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`templates_edit`)
+                        .setCustomId(`projects_edit`)
                         .setStyle(ButtonStyle.Secondary)
                         .setEmoji({name: "✏️"}),
                     new ButtonBuilder()
-                        .setCustomId(`templates_delete`)
+                        .setCustomId(`projects_delete`)
                         .setStyle(ButtonStyle.Danger)
                         .setEmoji({name: "🗑️"})
                 )
             );
         }
 
-        if (templates.length > 1)
+        if (projectLength > 1)
         {
             this.AddMenuComponents(components, 0);
             components.push(this.GetChangePageButtons());
@@ -229,23 +227,23 @@ class TemplateManager extends CommandInterface
 
     async OnButtonList(interaction)
     {
-        const templates = ScanProjectManager.Instance.DataCenter.GetTemplates(this.Interaction);
+        const projects = ScanProjectManager.Instance.DataCenter.GetProjects(this.Interaction);
 
-        this.OnButtonChangePage(interaction, templates.length, 0);
+        this.OnButtonChangePage(interaction, Object.keys(projects).length, 0);
 
         if (interaction.customId === "return")
         {
             this._menu = Menu.Home;
         }
-        else if (interaction.customId === "templates_edit")
+        else if (interaction.customId === "projects_edit")
         {
             this.IgnoreInteractions = true;
 
-            await new TemplateEditor(this.Interaction, interaction, templates[this.page], (template, lastInteraction) =>
+            await new ProjectEditor(this.Interaction, interaction, projects[Object.keys(projects)[this.page]], (project, lastInteraction) =>
                 {
-                    if (template)
+                    if (project)
                     {
-                        templates[this.page] = template;
+                        projects[Object.keys(projects)[this.page]] = project;
                     }
 
                     this.IgnoreInteractions = false;
@@ -254,9 +252,9 @@ class TemplateManager extends CommandInterface
                 }
             ).Start();
         }
-        else if (interaction.customId === "templates_delete")
+        else if (interaction.customId === "projects_delete")
         {
-            templates.splice(this.page, 1);
+            delete projects[Object.keys(projects)[this.page]];
             this.page = 0;
         }
     }
