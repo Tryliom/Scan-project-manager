@@ -69,6 +69,8 @@ export class CommandInterface
     _id
     /** @type {boolean} */
     _closed
+    /** @type {string} */
+    _messageId = undefined
 
     /** @type {Object<string, number>} */
     _menus = {}
@@ -123,7 +125,13 @@ export class CommandInterface
 
     async Start()
     {
-        const filter = (interaction) => interaction.user.id === this.Interaction.user.id || interaction.user.id === process.env.creatorId;
+        const filter = (interaction) =>
+        {
+            const isUser = interaction.user.id === this.Interaction.user.id || interaction.user.id === process.env.creatorId;
+            const isCorrectMessage = interaction.message.id === this._messageId;
+
+            return isUser && isCorrectMessage;
+        };
         this._collector = async (interaction) =>
         {
             if (!filter(interaction)) return;
@@ -155,6 +163,10 @@ export class CommandInterface
 
         await this.UpdateMsg();
 
+        const interaction = this.LastInteraction || this.Interaction;
+
+        this._messageId = (await interaction.fetchReply()).id;
+
         ScanProjectManager.Instance.SubscribeToEvent(this._id, this._collector);
     }
 
@@ -179,7 +191,6 @@ export class CommandInterface
             content = EmbedUtility.GetGoodEmbedMessage("Confirmation")
                 .setDescription(`${this.ConfirmationMessage}\n\nYou will return to the menu after 5sec`);
         }
-
 
         if (!this._closed) await DiscordUtility.Reply(interaction, this.GetContent(content), this.Ephemeral);
     }
@@ -474,7 +485,7 @@ export class CommandInterface
         }
     }
 
-    OnButtonChangePage(interaction, maxPage, index = null)
+    OnButtonChangePage(interaction, maxPage, menuIndexAssociated = null)
     {
         switch (interaction.customId)
         {
@@ -490,7 +501,7 @@ export class CommandInterface
         if (interaction.customId.startsWith("changepage"))
         {
             this.OnChangePage();
-            if (index) this.UpdateMenuPageWithPage(index, this.page);
+            if (menuIndexAssociated) this.UpdateMenuPageWithPage(menuIndexAssociated, this.page);
         }
     }
 

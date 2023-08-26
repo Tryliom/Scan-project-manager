@@ -114,38 +114,7 @@ export class TemplateEditor extends CommandInterface
             {name: "Description", value: this._template.Description},
         ]);
 
-        const sections = [];
-
-        for (let role of this._template.Roles)
-        {
-            const index = this._template.Roles.indexOf(role);
-            const users = [];
-            let name = role.Name;
-
-            if (index === this._sectionIndex)
-            {
-                name = `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${name}**`;
-            }
-
-            for (let userID of role.Users)
-            {
-                users.push(`<@${userID}>`);
-            }
-
-            if (users.length === 0)
-            {
-                users.push("No users");
-            }
-
-            sections.push(`${name}: ${users.join("\n")}`);
-        }
-
-        if (sections.length === 0)
-        {
-            sections.push("No sections");
-        }
-
-        embed.addFields([{name: "Sections", value: sections.join("\n\n")}]);
+        embed.addFields([this._template.GetSectionsAsFields(this._sectionIndex)]);
 
         return embed;
     }
@@ -158,7 +127,7 @@ export class TemplateEditor extends CommandInterface
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId(`string_edit`)
-                    .setLabel("Edit names")
+                    .setLabel("Edit info")
                     .setStyle(ButtonStyle.Secondary)
                     .setEmoji({name: "✏️"}),
                 new ButtonBuilder()
@@ -264,7 +233,7 @@ export class TemplateEditor extends CommandInterface
                         .setStyle(TextInputStyle.Paragraph)
                         .setPlaceholder("Template description")
                         .setMinLength(1)
-                        .setMaxLength(300)
+                        .setMaxLength(3999)
                         .setValue(this._template.Description)
                         .setRequired(true)
                 )

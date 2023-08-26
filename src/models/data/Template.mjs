@@ -1,4 +1,5 @@
 import {ProjectRole} from "./ProjectRole.mjs";
+import {EmojiUtility} from "../utility/EmojiUtility.mjs";
 
 export class Template
 {
@@ -35,5 +36,41 @@ export class Template
         }
 
         return this;
+    }
+
+    GetSectionsAsFields(indexSelected = -1)
+    {
+        const sections = [];
+
+        for (let role of this.Roles)
+        {
+            const index = this.Roles.indexOf(role);
+            const users = [];
+            let name = role.Name;
+
+            if (index === indexSelected)
+            {
+                name = `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${name}**`;
+            }
+
+            for (let userID of role.Users)
+            {
+                users.push(`<@${userID}>`);
+            }
+
+            if (users.length === 0)
+            {
+                users.push("No users");
+            }
+
+            sections.push(`${name}: ${users.join("\n")}`);
+        }
+
+        if (sections.length === 0)
+        {
+            sections.push("No sections");
+        }
+
+        return {name: "Sections", value: sections.join("\n\n")};
     }
 }
