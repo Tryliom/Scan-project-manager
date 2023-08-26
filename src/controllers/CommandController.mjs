@@ -52,28 +52,28 @@ export class CommandController
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Admin command",
                     `You are not the admin of this server.`
-                ))
+                ), true)
             }
             else if (command.OnlyProjectChannel && !ScanProjectManager.Instance.DataCenter.GetProjectFromChannel(interaction))
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Not in project channel",
                     `You need to be in a project channel to use this command.`
-                ))
+                ), true)
             }
             else if (command.OnlyInServer && !interaction.guildId)
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Not in server",
                     `You need to be in a server to use this command.`
-                ))
+                ), true)
             }
             else if (command.MinArgs + 1 > interaction.options.length)
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
                     "Args are missing",
                     `/${command.Name} ${command.Args}\n\nRequire minimum ${command.MinArgs} parameters to the command.`
-                ))
+                ), true)
             }
             else
             {

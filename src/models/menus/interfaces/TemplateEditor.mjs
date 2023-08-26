@@ -5,7 +5,6 @@ import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {Template} from "../../data/Template.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ProjectRole} from "../../data/ProjectRole.mjs";
-import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 
 const SelectMenus =
 {
@@ -51,20 +50,53 @@ export class TemplateEditor extends CommandInterface
                         this._template.Roles[this._sectionIndex].Users.push(value);
                     }
                 },
-                getList: () => this.GetUsersToAdd(),
-                options:
-                {
-                    /** @param {User} item */
-                    label: (item) => item.globalName,
-                    /** @param {User} item */
-                    value: (item) => item.id,
-                    /** @param {User} item */
-                    default: (item) => this._template.Roles[this._sectionIndex].Users.includes(item.id)
-                },
                 placeholder: "Select people..",
-                maxValues: 10,
-                minValues: 0
+                maxValues: 5,
+                minValues: 0,
+                menuType: CommandInterface.MenuType.User
             },
+            // Section mover
+            {
+                onMenuClick: values =>
+                {
+                    const indexToAttribute = parseInt(values[0]);
+
+                    if (indexToAttribute === this._sectionIndex) return;
+
+                    const section = this._template.Roles.splice(this._sectionIndex, 1)[0];
+                    this._template.Roles.splice(indexToAttribute, 0, section);
+
+                    this._sectionIndex = indexToAttribute === this._template.Roles.length ? indexToAttribute - 1 : indexToAttribute;
+                },
+                getList: () =>
+                {
+                    const list = [];
+
+                    for (let i = 0; i < this._template.Roles.length; i++)
+                    {
+                        list.push({label: `Above ${this._template.Roles[i].Name}`, value: i.toString()});
+
+                        if (i === this._sectionIndex)
+                        {
+                            list[i].default = true;
+                        }
+                    }
+
+                    if (this._template.Roles.length > 1)
+                    {
+                        list.push({label: `Last`, value: (this._template.Roles.length).toString()});
+                    }
+
+                    return list;
+                },
+                options: {
+                    label: (item) => item.label,
+                    value: item => item.value,
+                    default: item => item.default || false,
+                },
+                placeholder: "Move section..",
+                menuType: CommandInterface.MenuType.String,
+            }
         ]);
 
         // Make a copy of the template
@@ -80,7 +112,6 @@ export class TemplateEditor extends CommandInterface
         embed.addFields([
             {name: "Name", value: this._template.Name},
             {name: "Description", value: this._template.Description},
-            {name: '\u200b', value: '\u200b'},
         ]);
 
         const sections = [];
@@ -141,7 +172,7 @@ export class TemplateEditor extends CommandInterface
                     .setLabel("Undo")
                     .setStyle(ButtonStyle.Secondary)
                     .setEmoji({name: "↩️"})
-                    .setDisabled(this._undoStack.length === 0)
+                    .setDisabled(this._undoStack.length < 2)
             )
         );
         components.push(
@@ -179,7 +210,10 @@ export class TemplateEditor extends CommandInterface
             this.AddMenuComponents(components, SelectMenus.Users);
         }
 
-        //TODO: Show menu buttons to move sections First and below each other
+        if (this._template.Roles.length > 1)
+        {
+            this.AddMenuComponents(components, SelectMenus.SectionMover);
+        }
 
         components.push(new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -263,8 +297,6 @@ export class TemplateEditor extends CommandInterface
         else if (interaction.customId === "undo")
         {
             this.RestoreOldState();
-
-            return;
         }
 
         if (interaction.customId === "section_down")
@@ -345,38 +377,15 @@ export class TemplateEditor extends CommandInterface
     {
         if (this._undoStack.length > 0)
         {
-            if (this._undoStack.length > 1) this._undoStack.pop();
-            this._template = this._undoStack.pop();
+            do {
+                let lastState = this._undoStack.pop();
+
+                if (JSON.stringify(lastState) !== JSON.stringify(this._template))
+                {
+                    this._template = lastState;
+                    break;
+                }
+            } while (this._undoStack.length > 0);
         }
-    }
-
-    GetUsersToAdd()
-    {
-        // Get all users, first the ones already added
-        const users = [];
-        /** @type {Collection<Snowflake, GuildMember>} */
-        const allUsers = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(this.Interaction.guildId).members.cache;
-
-        for (let role of this._template.Roles)
-        {
-            const index = this._template.Roles.indexOf(role);
-
-            if (index !== this._sectionIndex) continue;
-
-            for (let userID of role.Users)
-            {
-                users.push(allUsers.find((user, id) => id === userID).user);
-            }
-        }
-
-        allUsers.forEach((guildMember, id) =>
-        {
-            if (users.findIndex(u => u.id === id) === -1 && !guildMember.user.bot)
-            {
-                users.push(guildMember.user);
-            }
-        });
-
-        return users;
     }
 }

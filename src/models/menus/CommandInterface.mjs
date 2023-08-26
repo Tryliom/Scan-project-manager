@@ -1,7 +1,21 @@
 import APIMessageComponentEmoji, {
-    ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder,
-    ButtonInteraction, InteractionCollector, ModalSubmitInteraction, CommandInteraction, Events, SelectMenuBuilder,
-    StringSelectMenuOptionBuilder, UserSelectMenuBuilder
+    ButtonStyle,
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    SelectMenuInteraction,
+    StringSelectMenuBuilder,
+    ButtonInteraction,
+    InteractionCollector,
+    ModalSubmitInteraction,
+    CommandInteraction,
+    Events,
+    SelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    UserSelectMenuBuilder,
+    MentionableSelectMenuBuilder,
+    ChannelSelectMenuBuilder,
+    RoleSelectMenuBuilder
 } from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
@@ -35,7 +49,8 @@ export class CommandInterface
      * @brief The last interaction that was made by the user
      * @type {CommandInteraction | null} */
     LastInteraction
-    /** @type {[{onMenuClick: Function<string[]>, getList: Function, options: {label: Function, value: Function}, placeholder: string, minValues: number, maxValues: number}] | []} */
+    /** @type {[{onMenuClick: Function<string[]>, getList: Function, options: {label: Function, value: Function},
+     * placeholder: string, minValues: number, maxValues: number, menuType: number}] | []} */
     MenuList
     /** @type {boolean} */
     Ephemeral
@@ -57,6 +72,15 @@ export class CommandInterface
 
     /** @type {Object<string, number>} */
     _menus = {}
+
+    static MenuType =
+    {
+        String: 0,
+        User: 1,
+        Role: 2,
+        Channel: 3,
+        Mentionable: 4,
+    };
 
 
     /**
@@ -86,6 +110,8 @@ export class CommandInterface
 
         for (let item of this.MenuList)
         {
+            if (item.menuType === undefined) item.menuType = CommandInterface.MenuType.String;
+
             this._menus[`menu${this.MenuList.indexOf(item)}`] = 0;
         }
     }
@@ -416,26 +442,35 @@ export class CommandInterface
         for (let item of this.MenuList)
         {
             const i = this.MenuList.indexOf(item);
-            const options = this.GetOptions(this._menus[`menu${i}`], item.getList(), item.options);
-            const minValues = Math.min(item.minValues === undefined ? 1 : item.minValues, options.length);
-            const maxValues = Math.min(item.maxValues === undefined ? 1 : item.maxValues, options.length);
 
-            if (index === null || index === i)
+            if (index !== null && index !== i) continue;
+
+            const minValues = item.minValues === undefined ? 1 : item.minValues;
+            const maxValues = item.maxValues === undefined ? 1 : item.maxValues;
+            const data =
             {
-                components.push(
-                    new ActionRowBuilder()
-                        .addComponents(
-                            new StringSelectMenuBuilder(
-                                {
-                                    custom_id: `menu${i}`,
-                                    placeholder: item.placeholder,
-                                    min_values: minValues,
-                                    max_values: maxValues,
-                                    options: options
-                                })
-                        )
-                );
+                custom_id: `menu${i}`,
+                placeholder: item.placeholder,
+                min_values: minValues,
+                max_values: maxValues,
+            };
+            let builder;
+
+            if (item.menuType === CommandInterface.MenuType.String)
+            {
+                data.options = this.GetOptions(this._menus[`menu${i}`], item.getList(), item.options);
             }
+
+            switch (item.menuType)
+            {
+                case CommandInterface.MenuType.String: builder = new StringSelectMenuBuilder(data); break;
+                case CommandInterface.MenuType.User: builder = new UserSelectMenuBuilder(data); break;
+                case CommandInterface.MenuType.Role: builder = new RoleSelectMenuBuilder(data); break;
+                case CommandInterface.MenuType.Channel: builder = new ChannelSelectMenuBuilder(data); break;
+                case CommandInterface.MenuType.Mentionable: builder = new MentionableSelectMenuBuilder(data); break;
+            }
+
+            components.push(new ActionRowBuilder().addComponents(builder));
         }
     }
 

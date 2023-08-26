@@ -1,6 +1,7 @@
 import {SlashCommandBuilder, AutocompleteInteraction, Client} from "discord.js";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
+import {PermissionFlagsBits} from "discord-api-types/v10";
 
 export class Command
 {
@@ -61,7 +62,7 @@ export class Command
             .setName(this.Name)
             .setDescription(description)
             .setDMPermission(!this.OnlyInServer)
-            .setDefaultMemberPermissions(this.Admin ? 8 : undefined);
+            .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages);
 
         this.AddSubCommands(slashCommand);
         this.AddOptions(slashCommand);

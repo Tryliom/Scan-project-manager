@@ -1,5 +1,11 @@
 import {EmbedUtility} from "./EmbedUtility.mjs";
-import {ButtonInteraction, SelectMenuInteraction, EmbedBuilder, MessageComponentInteraction} from "discord.js";
+import {
+    ButtonInteraction,
+    SelectMenuInteraction,
+    EmbedBuilder,
+    MessageComponentInteraction,
+    CommandInteraction
+} from "discord.js";
 
 export class DiscordUtility
 {
@@ -16,7 +22,11 @@ export class DiscordUtility
 
         try
         {
-            if (interaction instanceof ButtonInteraction || interaction instanceof SelectMenuInteraction)
+            if (interaction instanceof CommandInteraction)
+            {
+                await interaction.reply(content);
+            }
+            else
             {
                 if (interaction.replied || interaction.deferred)
                 {
@@ -26,14 +36,6 @@ export class DiscordUtility
                 {
                     await interaction.update(content);
                 }
-            }
-            else if (!interaction.replied && !interaction.deferred)
-            {
-                await interaction.reply(content);
-            }
-            else
-            {
-                await interaction.editReply(content);
             }
         }
         catch (e) {}
