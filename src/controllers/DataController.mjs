@@ -6,6 +6,7 @@ import {StringUtility} from "../models/utility/StringUtility.mjs";
 import {Server} from "../models/data/Server.mjs";
 import {Work} from "../models/data/Work.mjs";
 import {ScanProjectManager} from "./ScanProjectManager.mjs";
+import {Task} from "../models/data/Task.mjs";
 
 const {CommandInteraction} = pkg;
 
@@ -192,7 +193,54 @@ export class DataController
         this.CreateServerIfNotExist(interaction.guildId);
 
         this._servers[interaction.guildId].Projects[project.Id] = project;
+    }
 
-        //TODO: If the project is auto task, start the task
+    GetProject(interaction, projectId)
+    {
+        if (this._servers[interaction.guildId] === undefined) return undefined;
+
+        return this._servers[interaction.guildId].Projects[projectId];
+    }
+
+    /**
+     *
+     * @param interaction
+     * @param projectId
+     * @param chapters {number[]}
+     * @constructor
+     */
+    AddChapters(interaction, projectId, chapters)
+    {
+        const project = this.GetProject(interaction, projectId);
+
+        if (project === undefined) return;
+
+        for (const chapter of chapters)
+        {
+            project.Tasks.push(new Task().FromJson({Name: chapter.toString(), WorkIndex: 0}));
+        }
+
+        //TODO: Notify the first role of the project that there are new chapters to do
+    }
+
+    /**
+     *
+     * @param interaction
+     * @param projectId
+     * @param chapters {number[]}
+     * @constructor
+     */
+    RemoveChapters(interaction, projectId, chapters)
+    {
+        const project = this.GetProject(interaction, projectId);
+
+        if (project === undefined) return;
+
+        for (const chapter of chapters)
+        {
+            const index = project.Tasks.findIndex(task => task.Name === chapter.toString());
+
+            if (index !== -1) project.Tasks.splice(index, 1);
+        }
     }
 }

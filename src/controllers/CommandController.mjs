@@ -8,6 +8,7 @@ import {ScanProjectManager} from "./ScanProjectManager.mjs";
 import {Help} from "../models/command/commands/Help.mjs";
 import {Templates} from "../models/command/commands/Templates.mjs";
 import {Projects} from "../models/command/commands/Projects.mjs";
+import {Chapters} from "../models/command/commands/Chapters.mjs";
 
 export class CommandController
 {
@@ -21,7 +22,8 @@ export class CommandController
         [
             new Help(),
             new Templates(),
-            new Projects()
+            new Projects(),
+            new Chapters()
         ];
     }
 

@@ -40,6 +40,6 @@ export class ProjectRole
             return `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${this.Name}**: ${users.join(", ")}`;
         }
 
-        return `**${this.Name}**: ${users.join(", ")}`;
+        return `- **${this.Name}**: ${users.join(", ")}`;
     }
 }

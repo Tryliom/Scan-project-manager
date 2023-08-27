@@ -4,8 +4,6 @@ import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
-import {TemplateEditor} from "../../menus/interfaces/TemplateEditor.mjs";
-import {Template} from "../../data/Template.mjs";
 import {ProjectEditor} from "../../menus/interfaces/ProjectEditor.mjs";
 import {Project} from "../../data/Project.mjs";
 

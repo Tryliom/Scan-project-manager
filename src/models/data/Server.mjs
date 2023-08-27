@@ -26,6 +26,7 @@ export class Server
 
         for (const projectId in data.Projects)
         {
+            data.Projects[projectId].Id = projectId;
             this.Projects[projectId] = new Project().FromJson(data.Projects[projectId]);
         }
 

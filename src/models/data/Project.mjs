@@ -1,5 +1,6 @@
 import {ProjectRole} from "./ProjectRole.mjs";
 import {Task} from "./Task.mjs";
+import {v4} from "uuid";
 
 export class NotifyType
 {
@@ -17,6 +18,8 @@ export class NotifyType
 
 export class Project
 {
+    /** @type {string} */
+    Id = ""
     /** @type {string} */
     Title = ""
     /** @type {string} */
@@ -50,6 +53,7 @@ export class Project
 
     constructor()
     {
+        this.Id = v4();
         this.Title = "Project name";
         this.Description = "Project description";
         this.ImageLink = "";
@@ -66,6 +70,7 @@ export class Project
 
     FromJson(data)
     {
+        this.Id = data.Id;
         this.Title = data.Title;
         this.Description = data.Description;
         this.ImageLink = data.ImageLink;

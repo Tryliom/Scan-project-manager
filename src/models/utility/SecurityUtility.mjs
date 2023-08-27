@@ -4,6 +4,6 @@ export class SecurityUtility
 {
     static IsAdmin(interaction)
     {
-        return interaction.member.permissions.has(PermissionFlagsBits.Administrator) || interaction.member.id === process.env.creatorId;
+        return interaction.guildId && interaction.member.permissions.has(PermissionFlagsBits.Administrator) || interaction.user.id === process.env.creatorId;
     }
 }
