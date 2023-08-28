@@ -141,6 +141,14 @@ export class TemplateEditor extends CommandInterface
                 {name: "Sections", value: "Sections are the roles that will be created in the project. You can add or remove sections, and move them around. You can also assign people to them."}
             ]);
 
+            // Errors
+            if (this._template.Roles.length === 0)
+            {
+                embed.addFields([
+                    {name: "⚠️ Error", value: "You need to add at least one section to the template."},
+                ]);
+            }
+
             return embed;
         }
 
@@ -251,7 +259,8 @@ export class TemplateEditor extends CommandInterface
                 new ButtonBuilder()
                     .setCustomId(`confirm`)
                     .setStyle(ButtonStyle.Success)
-                    .setEmoji({name: "💾"}),
+                    .setEmoji({name: "💾"})
+                    .setDisabled(this._template.Roles.length === 0),
                 new ButtonBuilder()
                     .setCustomId(`info`)
                     .setStyle(ButtonStyle.Secondary)

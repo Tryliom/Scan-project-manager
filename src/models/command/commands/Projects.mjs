@@ -52,7 +52,7 @@ class ProjectManager extends CommandInterface
                     {
                         const project = projects[projectId];
                         const index = Object.keys(projects).indexOf(projectId);
-                        const option = {label: project.Name, description: project.Description, value: index};
+                        const option = {label: project.Title, description: project.Description, value: index};
 
                         if (index === this.page) option.default = true;
 
@@ -154,6 +154,11 @@ class ProjectManager extends CommandInterface
                     this.IgnoreInteractions = false;
                     this.LastInteraction = lastInteraction;
                     this.UpdateMsg();
+
+                    if (project)
+                    {
+                        ScanProjectManager.Instance.DataCenter.NotifyNewProject(this.Interaction, project.Id);
+                    }
                 }
             ).Start();
         }
@@ -241,6 +246,8 @@ class ProjectManager extends CommandInterface
                 {
                     if (project)
                     {
+                        ScanProjectManager.Instance.DataCenter.NotifyProjectUpdate(this.Interaction, projects[Object.keys(projects)[this.page]], project);
+
                         projects[Object.keys(projects)[this.page]] = project;
                     }
 
@@ -252,6 +259,8 @@ class ProjectManager extends CommandInterface
         }
         else if (interaction.customId === "projects_delete")
         {
+            ScanProjectManager.Instance.DataCenter.NotifyProjectDeletion(this.Interaction, projects[Object.keys(projects)[this.page]]);
+
             delete projects[Object.keys(projects)[this.page]];
             this.page = 0;
         }

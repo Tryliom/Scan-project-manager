@@ -138,9 +138,26 @@ export class ScanProjectManager
 
     async SendDM(userID, message)
     {
-        const user = await this.GetUser(userID);
+        try
+        {
+            const user = await this.GetUser(userID);
 
-        await user.createDM();
-        await user.send(message);
+            if (user.bot) return;
+
+            await user.createDM();
+            await user.send(message);
+        }
+        catch (error)
+        {
+            Logger.Log("SendDM", error);
+        }
+    }
+
+    async SendMessageInChannel(serverId, channelId, message)
+    {
+        const server = await this.DiscordClient.guilds.fetch(serverId);
+        const channel = await server.channels.fetch(channelId);
+
+        await channel.send(message);
     }
 }

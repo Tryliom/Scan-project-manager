@@ -167,6 +167,14 @@ export class ProjectEditor extends CommandInterface
 
         this._project.AddToEmbed(embed);
 
+        // Errors
+        const error = this.GetErrors();
+
+        if (error)
+        {
+            embed.addFields([error]);
+        }
+
         return embed;
     }
 
@@ -235,7 +243,8 @@ export class ProjectEditor extends CommandInterface
                 new ButtonBuilder()
                     .setCustomId(`confirm`)
                     .setStyle(ButtonStyle.Success)
-                    .setEmoji({name: "💾"}),
+                    .setEmoji({name: "💾"})
+                    .setDisabled(this.IsError()),
                 new ButtonBuilder()
                     .setCustomId(`info`)
                     .setStyle(ButtonStyle.Secondary)
@@ -411,5 +420,32 @@ export class ProjectEditor extends CommandInterface
                 }
             } while (this._undoStack.length > 0);
         }
+    }
+
+    GetErrors()
+    {
+        if (this._project.Roles.length === 0)
+        {
+            return {name: "⚠️ Error", value: "You need to add at least one role in the project with users assigned to."};
+        }
+        else if (this._project.ProjectManagers.length === 0)
+        {
+            return {name: "⚠️ Error", value: "You need to add at least one project manager."};
+        }
+        else if (this._project.Roles.find(role => role.Users.length === 0))
+        {
+            return {name: "⚠️ Error", value: "You need to add at least one user to each role."};
+        }
+        else if (this._project.Notify === NotifyType.channel && !this._project.ChannelId)
+        {
+            return {name: "⚠️ Error", value: "You need to specify a channel if you want to use channel notifications."};
+        }
+
+        return null;
+    }
+
+    IsError()
+    {
+        return this.GetErrors() !== null;
     }
 }

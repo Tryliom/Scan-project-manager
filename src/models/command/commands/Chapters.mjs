@@ -155,7 +155,7 @@ export class Chapters extends Command
         // If chaptersToAdd is empty, return
         if (chaptersToAdd.length === 0)
         {
-            return await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("Invalid chapter number."), true);
+            return await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("There is no chapters to add."), true);
         }
 
         // If chaptersToAdd is more than 100, return
