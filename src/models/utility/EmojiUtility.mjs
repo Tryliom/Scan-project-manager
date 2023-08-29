@@ -20,7 +20,7 @@ export class EmojiUtility
         List: "List",
         Up: "Up",
         Down: "Down",
-        Left: "Left",
+        Right: "Left",
     };
 
     static GetEmoji(emojiName)

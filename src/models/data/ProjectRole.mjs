@@ -37,7 +37,7 @@ export class ProjectRole
 
         if (isSelected)
         {
-            return `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Left)} **${this.Name}**: ${users.join(", ")}`;
+            return `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Right)} **${this.Name}**: ${users.join(", ")}`;
         }
 
         return `- **${this.Name}**: ${users.join(", ")}`;

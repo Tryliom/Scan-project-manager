@@ -68,6 +68,14 @@ export class Chapters extends Command
                 return await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("Invalid project specified."), true);
             }
         }
+        else
+        {
+            // Check if there is multiple projects in the same channel
+            if (this._scanProjectManager.DataCenter.IsMultipleProjectsInChannel(interaction))
+            {
+                return await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("There is multiple projects in this channel. Please specify a project."), true);
+            }
+        }
 
         if (!project)
         {

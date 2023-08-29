@@ -154,6 +154,23 @@ export class DataController
         return undefined;
     }
 
+    IsMultipleProjectsInChannel(interaction)
+    {
+        if (this._servers[interaction.guildId] === undefined) return false;
+
+        const projects = this._servers[interaction.guildId].Projects;
+        let count = 0;
+
+        for (const projectId in projects)
+        {
+            if (projects[projectId].ChannelId !== interaction.channelId) continue;
+
+            count++;
+        }
+
+        return count > 1;
+    }
+
     /**
      * @brief Get the templates from the server where the interaction was made.
      * @param {CommandInteraction} interaction
@@ -207,6 +224,39 @@ export class DataController
 
     /**
      *
+     * @param userId
+     * @returns {{serverId: string, project: Project, tasks: Task[]}[]}
+     * @constructor
+     */
+    GetProjectWithTasks(userId)
+    {
+        const projects = [];
+
+        if (this._users[userId] === undefined) return projects;
+
+        for (const work of this._users[userId])
+        {
+            const project = this.GetProject({guildId: work.ServerId}, work.ProjectId);
+            const tasks = [];
+
+            if (project === undefined) continue;
+
+            for (const task of project.Tasks)
+            {
+                if (task.WorkIndex === project.Roles.length && project.ProjectManagers.includes(userId)) tasks.push(task);
+                else if (project.Roles[task.WorkIndex].Users.includes(userId)) tasks.push(task);
+            }
+
+            if (tasks.length === 0) continue;
+
+            projects.push({serverId: work.ServerId, project: project, tasks: tasks});
+        }
+
+        return projects;
+    }
+
+    /**
+     *
      * @param interaction
      * @param projectId
      * @param chapters {number[]}
@@ -253,7 +303,7 @@ export class DataController
      * @brief Mark the chapters as done for the work index.
      * @param interaction
      * @param projectId
-     * @param chapters
+     * @param chapters {number[] | string[]}
      * @constructor
      */
     DoneChapters(interaction, projectId, chapters)
@@ -493,16 +543,24 @@ export class DataController
         }
 
         let message = `**chapter${tasks.length > 1 ? "s" : ""} ${tasks[0].Name}${tasks.length > 1 ? " to " + tasks[tasks.length - 1].Name : ""}**`;
-        let title = `New chapter${tasks.length > 1 ? "s" : ""}`;
+        let title = `New chapter${tasks.length > 1 ? "s" : ""} in project **${project.Title}**`;
 
         if (project.Notify === NotifyType.dm)
         {
-            title += ` in project **${project.Title}** on server **${interaction.guild.name}**`;
+            title += ` on server **${interaction.guild.name}**`;
         }
 
-        this.SendMessage(interaction, projectId, users, EmbedUtility.GetGoodEmbedMessage(title,
-            `You can start working on the ${message}.`)
-            .setFooter({text: `Use /tasks to see your new tasks`}));
+        const embed = EmbedUtility.GetGoodEmbedMessage(title);
+
+        if (project.ImageLink.startsWith("http"))
+        {
+            embed.setImage(project.ImageLink);
+        }
+
+        embed.setDescription(`You can start working on ${message} (${project.Roles[0].Name})`);
+        embed.setFooter({text: `Use /tasks to see your new tasks`});
+
+        this.SendMessage(interaction, projectId, users, embed);
     }
 
     /**
@@ -556,16 +614,23 @@ export class DataController
             let message = "";
 
             message = `- **${role}**: ${usersAssignments[roles[role][0]][role].join(", ")}`;
-            let title = `New chapter${tasks.length > 1 ? "s" : ""}`;
+            let title = `New chapter${tasks.length > 1 ? "s" : ""} in project **${project.Title}**`;
 
             if (project.Notify === NotifyType.dm)
             {
-                title += ` in project **${project.Title}** on server **${interaction.guild.name}**`;
+                title += ` on server **${interaction.guild.name}**`;
             }
 
-            this.SendMessage(interaction, projectId, roles[role], EmbedUtility.GetGoodEmbedMessage(title,
-                `You can start working on the following chapters:\n${message}`)
-                .setFooter({text: `Use /tasks to see your new tasks`}));
+            const embed = EmbedUtility.GetGoodEmbedMessage(title, `You can start working on the following chapters:\n${message}`);
+
+            if (project.ImageLink.startsWith("http"))
+            {
+                embed.setImage(project.ImageLink);
+            }
+
+            embed.setFooter({text: `Use /tasks to see your new tasks`});
+
+            this.SendMessage(interaction, projectId, roles[role], embed);
         }
     }
 

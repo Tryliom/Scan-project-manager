@@ -37,6 +37,7 @@ const CollectorTime = 90 * 60000;
  *     <li>OnMenuInteraction(interaction): Call it at the end of the function</li>
  *     <li>OnMenuPageChange(index): Call it at the end of the function</li>
  *     <li>OnChangePage()</li>
+ *     <li>OnAction(): Call when an action is done by the user</li>
  * </ul>
  */
 export class CommandInterface
@@ -181,6 +182,8 @@ export class CommandInterface
 
         if (this.IgnoreInteractions) return;
 
+        this.OnAction();
+
         if (this.Error !== "")
         {
             content = EmbedUtility.GetBadEmbedMessage("An error occurred")
@@ -269,6 +272,8 @@ export class CommandInterface
      * @constructor
      */
     async OnModal(interaction) {}
+
+    OnAction() {}
 
     async StopCollector(closeMessage = true)
     {
