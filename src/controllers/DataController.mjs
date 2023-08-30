@@ -256,18 +256,20 @@ export class DataController
 
                 for (const role of project.Roles)
                 {
-                    if (role.Moving !== -1 && !task.Completion[index])
+                    const isRoleDone = task.Completion[index];
+
+                    if (role.Moving !== -1 && !isRoleDone)
                     {
                         movingRole[index] = role.Moving;
                     }
 
-                    if (role.Users.includes(userId) && !task.Completion[index])
+                    if (role.Users.includes(userId) && !isRoleDone)
                     {
                         roles.push(index);
                     }
 
                     // Check if we should break the loop
-                    if (!task.Completion[index] && (movingRole[index] !== undefined || Object.keys(movingRole).length === 0)) break;
+                    if (!isRoleDone && movingRole[index] === undefined) break;
                     if (index !== 0)
                     {
                         let shouldBreak = false;
@@ -674,7 +676,7 @@ export class DataController
                 }
 
                 // Check if we should break the loop
-                if (!task.Completion[index] && (movingRole[index] !== undefined || Object.keys(movingRole).length === 0)) break;
+                if (!task.Completion[index] && movingRole[index] === undefined) break;
                 if (index !== 0)
                 {
                     let shouldBreak = false;
