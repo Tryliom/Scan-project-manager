@@ -35,6 +35,10 @@ export class TemplateEditor extends CommandInterface
 
     /** @type {Menu} */
     _menu = Menu.Editor
+    /** @type {boolean} */
+    _moving = false
+    /** @type {number} */
+    _movingIndex = 0
 
     /**
      *
@@ -42,6 +46,7 @@ export class TemplateEditor extends CommandInterface
      * @param lastInteraction
      * @param template {Template}
      * @param onConfirm {function (template: Template, lastInteraction: CommandInteraction)}
+     * @param onlyRoles {boolean}
      */
     constructor(interaction, lastInteraction, template, onConfirm, onlyRoles = false)
     {
@@ -138,7 +143,8 @@ export class TemplateEditor extends CommandInterface
 
             embed.addFields([
                 ...fields,
-                {name: "Sections", value: "Sections are the roles that will be created in the project. You can add or remove sections, and move them around. You can also assign people to them."}
+                {name: "Sections", value: "Sections are the roles that will be created in the project. You can add or remove sections, and move them around. You can also assign people to them."},
+                this.GetMovingExplanation()
             ]);
 
             // Errors
@@ -162,7 +168,25 @@ export class TemplateEditor extends CommandInterface
             ]);
         }
 
-        embed.addFields([this._template.GetSectionsAsFields(this._sectionIndex)]);
+        const movingExplanation = this.GetMovingExplanation();
+
+        movingExplanation.name = "ℹ️ " + movingExplanation.name;
+
+        embed.addFields([
+            movingExplanation
+        ]);
+
+        if (this._moving)
+        {
+            embed.addFields([
+                {name: "Moving", value: `Section \`${this._template.Roles[this._sectionIndex].Name}\` is moving up to section \`${this._template.Roles[this._movingIndex].Name}\` included`},
+                {name: "\u200B", value: "\u200B"}
+            ]);
+        }
+
+        embed.addFields([
+            this._template.GetSectionsAsFields(this._moving ? this._movingIndex : this._sectionIndex)
+        ]);
 
         return embed;
     }
@@ -182,6 +206,33 @@ export class TemplateEditor extends CommandInterface
         }
 
         const components = [];
+
+        if (this._moving)
+        {
+            components.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`section_moving_cancel`)
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Return)),
+                new ButtonBuilder()
+                    .setCustomId(`section_moving_down`)
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Down))
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(this._template.Roles.length === 0 || this._movingIndex === this._template.Roles.length - 1),
+                new ButtonBuilder()
+                    .setCustomId(`section_moving_up`)
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Up))
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(this._template.Roles.length === 0 || this._movingIndex === this._sectionIndex + 1),
+                new ButtonBuilder()
+                    .setCustomId(`section_moving_valid`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji({name: "✅"})
+            ));
+
+            return components;
+        }
+
         const actions = new ActionRowBuilder();
 
         if (!this._onlyRoles)
@@ -202,6 +253,12 @@ export class TemplateEditor extends CommandInterface
                 .setStyle(ButtonStyle.Secondary)
                 .setEmoji({name: "✏️"})
                 .setDisabled(this._template.Roles.length === 0),
+            new ButtonBuilder()
+                .setCustomId(`section_set_moving`)
+                .setLabel("Set as moving")
+                .setEmoji({name: "✏️"})
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(this._sectionIndex === this._template.Roles.length - 1 || this._template.Roles.length === 0),
             new ButtonBuilder()
                 .setCustomId(`undo`)
                 .setLabel("Undo")
@@ -281,6 +338,31 @@ export class TemplateEditor extends CommandInterface
             return;
         }
 
+        if (this._moving)
+        {
+            if (interaction.customId === "section_moving_cancel")
+            {
+                this._moving = false;
+                this._movingIndex = 0;
+            }
+            else if (interaction.customId === "section_moving_down")
+            {
+                this._movingIndex = Math.min(this._movingIndex + 1, this._template.Roles.length - 1);
+            }
+            else if (interaction.customId === "section_moving_up")
+            {
+                this._movingIndex = Math.max(this._movingIndex - 1, this._sectionIndex + 1);
+            }
+            else if (interaction.customId === "section_moving_valid")
+            {
+                this._template.Roles[this._sectionIndex].Moving = this._movingIndex;
+                this._moving = false;
+                this._movingIndex = 0;
+            }
+
+            return;
+        }
+
         if (interaction.customId === "confirm" || interaction.customId === "return")
         {
             const template = interaction.customId === "return" ? null : this._template;
@@ -347,6 +429,11 @@ export class TemplateEditor extends CommandInterface
 
             await this.ShowModal(modal);
         }
+        else if (interaction.customId === "section_set_moving")
+        {
+            this._moving = true;
+            this._movingIndex = this._sectionIndex + 1;
+        }
         else if (interaction.customId === "undo")
         {
             this.RestoreOldState();
@@ -384,6 +471,19 @@ export class TemplateEditor extends CommandInterface
         else if (interaction.customId === "section_remove")
         {
             this._template.Roles.splice(this._sectionIndex, 1);
+
+            // Check if a section with moving was dependent on the removed section
+            for (let role of this._template.Roles)
+            {
+                if (role.Moving === this._sectionIndex)
+                {
+                    role.Moving = -1;
+                }
+                else if (role.Moving > this._sectionIndex)
+                {
+                    role.Moving--;
+                }
+            }
         }
 
         this.SaveOldState();
@@ -440,5 +540,13 @@ export class TemplateEditor extends CommandInterface
                 }
             } while (this._undoStack.length > 0);
         }
+    }
+
+    GetMovingExplanation()
+    {
+        return {name: "Moving", value: "You can make a section as 'moving', it means that the role can be done in the same time as the next sections until their moving limit you can set. The limit is included within." +
+                "\nThey are marked as `RoleName -> MovingRoleName`." +
+                "\nFor example: You have the sections `Clean`, `Translation`, `Check` and `Edit`." +
+                "\nIf you set `Clean` as moving up to `Check`, it means that the `Clean` role can be done at the same time as `Translation` and `Edit`."};
     }
 }

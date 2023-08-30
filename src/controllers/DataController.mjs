@@ -225,7 +225,7 @@ export class DataController
     /**
      *
      * @param userId
-     * @returns {{serverId: string, project: Project, tasks: Task[]}[]}
+     * @returns {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}[]}
      * @constructor
      */
     GetProjectWithTasks(userId)
@@ -243,8 +243,54 @@ export class DataController
 
             for (const task of project.Tasks)
             {
-                if (task.WorkIndex === project.Roles.length && project.ProjectManagers.includes(userId)) tasks.push(task);
-                else if (project.Roles[task.WorkIndex].Users.includes(userId)) tasks.push(task);
+                if (task.IsAllCompleted() && project.ProjectManagers.includes(userId))
+                {
+                    tasks.push({task: task, roleAvailable: [project.Roles.length]});
+                    continue;
+                }
+
+                /** @type {Object<number, number>} */
+                const movingRole = {};
+                let index = 0;
+                const roles = [];
+
+                for (const role of project.Roles)
+                {
+                    if (role.Moving !== -1)
+                    {
+                        movingRole[index] = role.Moving;
+                    }
+
+                    if (role.Users.includes(userId) && !task.Completion[index])
+                    {
+                        roles.push(index);
+                    }
+
+                    // Check if we should break the loop
+                    if (!task.Completion[index] && movingRole[index] !== undefined) break;
+                    if (index === 0) continue
+
+                    let shouldBreak = false;
+
+                    for (let i = index; i > 0; i--)
+                    {
+                        if (movingRole[i] === undefined) continue;
+
+                        if (!task.Completion[i] && index === movingRole[i])
+                        {
+                            shouldBreak = true;
+                            break;
+                        }
+                    }
+
+                    if (shouldBreak) break;
+
+                    index++;
+                }
+
+                if (roles.length === 0) continue;
+
+                tasks.push({task: task, roleAvailable: roles});
             }
 
             if (tasks.length === 0) continue;
@@ -271,8 +317,11 @@ export class DataController
 
         for (const chapter of chapters)
         {
-            project.Tasks.push(new Task().FromJson({Name: chapter.toString(), WorkIndex: 0}));
-            tasks.push(project.Tasks[project.Tasks.length - 1]);
+            const task = new Task().FromJson({Name: chapter.toString(), Completion: []});
+
+            task.InitializeCompletion(project.Roles);
+            project.Tasks.push(task);
+            tasks.push(task);
         }
 
         this.NotifyNewTasks(interaction, projectId, tasks);
@@ -303,10 +352,10 @@ export class DataController
      * @brief Mark the chapters as done for the work index.
      * @param interaction
      * @param projectId
-     * @param chapters {number[] | string[]}
+     * @param work {{chapters: number[] | string[], role: number}}
      * @constructor
      */
-    DoneChapters(interaction, projectId, chapters)
+    DoneChapters(interaction, projectId, work)
     {
         const project = this.GetProject(interaction, projectId);
 
@@ -315,15 +364,15 @@ export class DataController
         const doneTasks = [];
         const updatedTasks = [];
 
-        for (const chapter of chapters)
+        for (const chapter of work.chapters)
         {
             const index = project.Tasks.findIndex(task => task.Name === chapter.toString());
 
             if (index !== -1)
             {
-                project.Tasks[index].WorkIndex++;
+                project.Tasks[index].Completion[work.role] = true;
 
-                if (project.Tasks[index].WorkIndex === project.Roles.length)
+                if (project.Tasks[index].IsAllCompleted())
                 {
                     doneTasks.push(project.Tasks[index]);
                 }
@@ -534,33 +583,38 @@ export class DataController
 
         if (project === undefined) return;
 
-        const users = [];
-
-        // Just notify the users of the first role that they can start working on the new tasks
-        for (const userId of project.Roles[0].Users)
+        for (const role of project.Roles)
         {
-            users.push(userId);
+            const users = [];
+
+            // Just notify the users of the first role that they can start working on the new tasks
+            for (const userId of role.Users)
+            {
+                users.push(userId);
+            }
+
+            let message = `**chapter${tasks.length > 1 ? "s" : ""} ${tasks[0].Name}${tasks.length > 1 ? " to " + tasks[tasks.length - 1].Name : ""}**`;
+            let title = `New chapter${tasks.length > 1 ? "s" : ""} in project **${project.Title}**`;
+
+            if (project.Notify === NotifyType.dm)
+            {
+                title += ` on server **${interaction.guild.name}**`;
+            }
+
+            const embed = EmbedUtility.GetGoodEmbedMessage(title);
+
+            if (project.ImageLink.startsWith("http"))
+            {
+                embed.setImage(project.ImageLink);
+            }
+
+            embed.setDescription(`You can start working on ${message} (${role.Name})`);
+            embed.setFooter({text: `Use /tasks to see your new tasks`});
+
+            this.SendMessage(interaction, projectId, users, embed);
+
+            if (role.Moving === -1) break;
         }
-
-        let message = `**chapter${tasks.length > 1 ? "s" : ""} ${tasks[0].Name}${tasks.length > 1 ? " to " + tasks[tasks.length - 1].Name : ""}**`;
-        let title = `New chapter${tasks.length > 1 ? "s" : ""} in project **${project.Title}**`;
-
-        if (project.Notify === NotifyType.dm)
-        {
-            title += ` on server **${interaction.guild.name}**`;
-        }
-
-        const embed = EmbedUtility.GetGoodEmbedMessage(title);
-
-        if (project.ImageLink.startsWith("http"))
-        {
-            embed.setImage(project.ImageLink);
-        }
-
-        embed.setDescription(`You can start working on ${message} (${project.Roles[0].Name})`);
-        embed.setFooter({text: `Use /tasks to see your new tasks`});
-
-        this.SendMessage(interaction, projectId, users, embed);
     }
 
     /**
@@ -584,14 +638,61 @@ export class DataController
 
         for (const task of tasks)
         {
-            const roleToNotify = project.Roles[task.WorkIndex];
+            const roles = [];
+            /** @type {Object<number, number>} */
+            const movingRole = {};
+            let index = 0;
 
-            for (const userId of roleToNotify.Users)
+            for (const role of project.Roles)
             {
-                if (usersAssignments[userId] === undefined) usersAssignments[userId] = {};
-                if (usersAssignments[userId][roleToNotify.Name] === undefined) usersAssignments[userId][roleToNotify.Name] = [];
+                if (role.Moving !== -1)
+                {
+                    movingRole[index] = role.Moving;
+                }
 
-                usersAssignments[userId][roleToNotify.Name].push(task.Name);
+                let isDoneUpper = false;
+
+                for (let i = index; i < project.Roles.length; i++)
+                {
+                    if (task.Completion[i])
+                    {
+                        isDoneUpper = true;
+                        break;
+                    }
+                }
+
+                if (!task.Completion[index] && !isDoneUpper) roles.push(role.Name);
+
+                // Check if we should break the loop
+                if (!task.Completion[index] && movingRole[index] !== undefined) break;
+                if (index === 0) continue;
+
+                let shouldBreak = false;
+
+                for (let i = index; i > 0; i--) {
+                    if (movingRole[i] === undefined) continue;
+
+                    if (!task.Completion[i] && index === movingRole[i]) {
+                        shouldBreak = true;
+                        break;
+                    }
+                }
+
+                if (shouldBreak) break;
+
+                index++;
+            }
+
+            // Notify all users that should finish their tasks that's a moving role and all
+            for (const role of roles)
+            {
+                for (const userId of project.Roles.find(r => r.Name === role).Users)
+                {
+                    if (usersAssignments[userId] === undefined) usersAssignments[userId] = {};
+                    if (usersAssignments[userId][role] === undefined) usersAssignments[userId][role] = [];
+
+                    usersAssignments[userId][role].push(task.Name);
+                }
             }
         }
 

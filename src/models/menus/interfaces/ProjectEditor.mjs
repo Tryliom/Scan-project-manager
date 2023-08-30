@@ -107,7 +107,7 @@ export class ProjectEditor extends CommandInterface
 
                     if (templates.length > 0)
                     {
-                        list.push({label: "Templates", description: "Import roles from a template", value: "template_none", default: true});
+                        list.push({label: "Templates", description: "Import roles from a template, don't select this", value: "template_none", default: true});
 
                         for (let i = 0; i < templates.length; i++)
                         {
@@ -117,7 +117,7 @@ export class ProjectEditor extends CommandInterface
 
                     if (Object.keys(projects).length > 0)
                     {
-                        list.push({label: "Projects", description: "Import roles from a project", value: "project_none", default: true});
+                        list.push({label: "Projects", description: "Import roles from a project, don't select this", value: "project_none", default: true});
 
                         let i = 0;
                         for (let projectId in projects)
@@ -157,7 +157,7 @@ export class ProjectEditor extends CommandInterface
                 {name: "Project managers", value: "Project managers are the people in charge of the project. They will be notified when a chapter is done or if a task is inactive for more than 1 week."},
                 {name: "Channel", value: "Channel where the notifications will be sent. If not, notifications will be sent in private message."},
                 {name: "Notify", value: "Notify type is the type of notification that will be sent. It can be in the channel or in private message."},
-                {name: "Chapter auto creation", value: "If enabled, a new chapter will be created automatically when the last one is done. It will be named \"Chapter X\" where X is the number of the chapter and increase by 1 each time."},
+                {name: "Chapter auto creation", value: "If enabled, a new chapter will be created automatically when the last one has at least one role done. It will be named \"Chapter X\" where X is the number of the chapter and increase by 1 each time. You still need to create manually the first chapter."},
             ]);
 
             return embed;

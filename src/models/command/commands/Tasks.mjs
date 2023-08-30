@@ -3,6 +3,7 @@ import {CommandInterface} from "../../menus/CommandInterface.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 
 export class Tasks extends Command
 {
@@ -19,12 +20,14 @@ export class Tasks extends Command
 
 class TaskInterface extends CommandInterface
 {
-    /** @type {{serverId: string, project: Project, tasks: Task[]}[]} */
+    /** @type {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}[]} */
     _tasks = [];
     /** @type {number} */
     page = 0;
     /** @type {number} */
-    _selectedWorkIndex = 0;
+    _selectedRoleIndex = 0;
+    /** @type {Object<number, string[]>} */
+    _chaptersForRole = {};
 
     constructor(interaction)
     {
@@ -76,7 +79,7 @@ class TaskInterface extends CommandInterface
             return embed;
         }
 
-        /** @type {{serverId: string, project: Project, tasks: Task[]}} */
+        /** @type {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}} */
         const task = this._tasks[this.page];
         const server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(task.serverId);
 
@@ -89,7 +92,9 @@ class TaskInterface extends CommandInterface
 
         if (task.project.Links.length > 0)
         {
-            embed.addFields({name: "Links", value: task.project.Links});
+            embed.addFields([
+                {name: "Links", value: task.project.Links}
+            ]);
         }
 
         if (task.project.ImageLink.startsWith("http"))
@@ -97,50 +102,44 @@ class TaskInterface extends CommandInterface
             embed.setImage(task.project.ImageLink);
         }
 
-        // Sort tasks by the lowest work index
-        const sortedTasks = task.tasks.sort((a, b) => a.WorkIndex - b.WorkIndex);
         const tasks = [];
-        let index = 0;
-        let chapters = [];
-        const checkChapter = () =>
+        this._chaptersForRole = {};
+
+        for (let i = 0; i <= task.project.Roles.length; i++)
         {
+            const chapters = [];
+
+            for (const taskAndRole of task.tasks)
+            {
+                if (!taskAndRole.roleAvailable.includes(i)) continue;
+
+                chapters.push(taskAndRole.task.Name);
+            }
+
             if (chapters.length > 0)
             {
                 let role;
                 let prefix;
 
-                if (index === task.project.Roles.length)
+                if (i === task.project.Roles.length)
                 {
                     role = "Publish";
                 }
                 else
                 {
-                    role = task.project.Roles[index].Name;
+                    role = task.project.Roles[i].Name;
                 }
 
-                if (tasks.length === this._selectedWorkIndex)
+                if (tasks.length === this._selectedRoleIndex)
                 {
                     prefix = EmojiUtility.GetEmoji(EmojiUtility.Emojis.Right);
                 }
 
+                this._chaptersForRole[i] = chapters;
+
                 tasks.push(`- ${prefix} **${role}**: Chapter ${chapters[0]}${chapters.length > 1 ? ` to ${chapters[chapters.length - 1]}` : ""}`);
             }
-        };
-
-        for (const task of sortedTasks)
-        {
-            if (index !== task.WorkIndex)
-            {
-                checkChapter();
-
-                index = task.WorkIndex;
-                chapters = [];
-            }
-
-            chapters.push(task.Name);
         }
-
-        checkChapter();
 
         embed.addFields([
             {name: "\u200B", value: "\u200B"},
@@ -155,6 +154,21 @@ class TaskInterface extends CommandInterface
         if (this._tasks.length === 0) return [];
 
         const components = [];
+
+        components.push(
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`section_down`)
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Down))
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(this._selectedRoleIndex === Object.keys(this._chaptersForRole).length - 1),
+                new ButtonBuilder()
+                    .setCustomId(`section_up`)
+                    .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Up))
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(this._selectedRoleIndex === 0)
+            )
+        );
 
         if (this._tasks.length > 1)
         {

@@ -25,7 +25,7 @@ export class ScanProjectManager
         this.DataCenter = new DataController();
 
         this.CommandCenter.Initialize();
-        this.DataCenter.Backup();
+        //this.DataCenter.Backup();
 
         setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);
         setInterval(() => this.DataCenter.SaveAll(), 1000 * 60);

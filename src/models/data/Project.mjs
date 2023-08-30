@@ -99,7 +99,7 @@ export class Project
 
     AddToEmbed(embed)
     {
-        const roles = this.Roles.map(value => value.GetSectionAsField()).join("\n\n");
+        const roles = this.Roles.map(value => value.GetSectionAsField(this.Roles)).join("\n\n");
         const projectManagers = this.ProjectManagers.map(value => `<@${value}>`).join("\n");
 
         embed.addFields([

@@ -1,5 +1,4 @@
 import {ProjectRole} from "./ProjectRole.mjs";
-import {EmojiUtility} from "../utility/EmojiUtility.mjs";
 
 export class Template
 {
@@ -16,7 +15,7 @@ export class Template
         this.Description = "A default template.";
         this.Roles =
         [
-            new ProjectRole().FromJson({Name: "Clean", Users: []}),
+            new ProjectRole().FromJson({Name: "Clean", Users: [], Moving: 2}),
             new ProjectRole().FromJson({Name: "Translation", Users: []}),
             new ProjectRole().FromJson({Name: "Check", Users: []}),
             new ProjectRole().FromJson({Name: "Edit", Users: []}),
@@ -46,7 +45,7 @@ export class Template
         {
             const index = this.Roles.indexOf(role);
 
-            sections.push(role.GetSectionAsField(index === indexSelected));
+            sections.push(role.GetSectionAsField(this.Roles, index === indexSelected));
         }
 
         if (sections.length === 0)

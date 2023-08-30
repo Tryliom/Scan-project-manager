@@ -3,21 +3,41 @@ export class Task
     /** @type {string} */
     Name = ""
     /**
-     * @brief Role index of the user who is working on this task and need to finish it
-     * @type {number} */
-    WorkIndex = 0
+     * @brief List of booleans that represent the completion for each roles
+     * @type {boolean[]} */
+    Completion = []
 
     constructor()
     {
         this.Name = "";
-        this.WorkIndex = 0;
+        this.Completion = [];
     }
 
     FromJson(data)
     {
         this.Name = data.Name;
-        this.WorkIndex = data.WorkIndex;
+        this.Completion = data.Completion;
 
         return this;
+    }
+
+    InitializeCompletion(roles)
+    {
+        this.Completion = [];
+
+        for (let role of roles)
+        {
+            this.Completion.push(false);
+        }
+    }
+
+    IsAllCompleted()
+    {
+        for (let completion of this.Completion)
+        {
+            if (!completion) return false;
+        }
+
+        return true;
     }
 }
