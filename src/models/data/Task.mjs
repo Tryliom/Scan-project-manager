@@ -15,8 +15,8 @@ export class Task
 
     FromJson(data)
     {
-        this.Name = data.Name;
-        this.Completion = data.Completion;
+        this.Name = data.Name || "";
+        this.Completion = data.Completion || [];
 
         return this;
     }

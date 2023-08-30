@@ -256,7 +256,7 @@ export class DataController
 
                 for (const role of project.Roles)
                 {
-                    if (role.Moving !== -1)
+                    if (role.Moving !== -1 && !task.Completion[index])
                     {
                         movingRole[index] = role.Moving;
                     }
@@ -267,23 +267,23 @@ export class DataController
                     }
 
                     // Check if we should break the loop
-                    if (!task.Completion[index] && movingRole[index] !== undefined) break;
-                    if (index === 0) continue
-
-                    let shouldBreak = false;
-
-                    for (let i = index; i > 0; i--)
+                    if (!task.Completion[index] && (movingRole[index] !== undefined || Object.keys(movingRole).length === 0)) break;
+                    if (index !== 0)
                     {
-                        if (movingRole[i] === undefined) continue;
+                        let shouldBreak = false;
 
-                        if (!task.Completion[i] && index === movingRole[i])
+                        for (let i = index; i > 0; i--)
                         {
-                            shouldBreak = true;
-                            break;
-                        }
-                    }
+                            if (movingRole[i] === undefined) continue;
 
-                    if (shouldBreak) break;
+                            if (!task.Completion[i] && index === movingRole[i]) {
+                                shouldBreak = true;
+                                break;
+                            }
+                        }
+
+                        if (shouldBreak) break;
+                    }
 
                     index++;
                 }
@@ -350,14 +350,16 @@ export class DataController
 
     /**
      * @brief Mark the chapters as done for the work index.
-     * @param interaction
+     * @param serverId
      * @param projectId
      * @param work {{chapters: number[] | string[], role: number}}
      * @constructor
      */
-    DoneChapters(interaction, projectId, work)
+    DoneChapters(serverId, projectId, work)
     {
-        const project = this.GetProject(interaction, projectId);
+        const server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(serverId);
+        const fakeInteraction = {guild: server, guildId: serverId};
+        const project = this.GetProject(fakeInteraction, projectId);
 
         if (project === undefined) return;
 
@@ -370,6 +372,15 @@ export class DataController
 
             if (index !== -1)
             {
+                if (project.Tasks[index].Completion.length === work.role && project.Tasks[index].IsAllCompleted())
+                {
+                    const lastTask = project.Tasks.splice(index, 1);
+
+                    project.LastTaskDone = lastTask[0].Name;
+
+                    continue;
+                }
+
                 project.Tasks[index].Completion[work.role] = true;
 
                 if (project.Tasks[index].IsAllCompleted())
@@ -382,16 +393,23 @@ export class DataController
 
                     if (project.AutoTask && index === project.Tasks.length - 1)
                     {
-                        project.Tasks.push(new Task().FromJson({Name: (parseFloat(project.Tasks[index].Name) + 1).toString(), WorkIndex: 0}));
+                        const task = new Task().FromJson({Name: (parseFloat(project.Tasks[index].Name) + 1).toString()});
 
-                        updatedTasks.push(project.Tasks[project.Tasks.length - 1]);
+                        task.InitializeCompletion(project.Roles);
+                        project.Tasks.push(task);
+                        updatedTasks.push(task);
                     }
                 }
             }
         }
 
-        this.NotifyTasksDone(interaction, projectId, doneTasks);
-        this.NotifyTasksUpdate(interaction, projectId, updatedTasks);
+        if (doneTasks.length > 0 || updatedTasks.length > 0)
+        {
+            project.UpdateLastActionDate();
+        }
+
+        this.NotifyTasksDone(fakeInteraction, projectId, doneTasks);
+        this.NotifyTasksUpdate(fakeInteraction, projectId, updatedTasks);
     }
 
     // Notification functions
@@ -645,40 +663,34 @@ export class DataController
 
             for (const role of project.Roles)
             {
-                if (role.Moving !== -1)
+                if (role.Moving !== -1 && !task.Completion[index])
                 {
                     movingRole[index] = role.Moving;
                 }
 
-                let isDoneUpper = false;
-
-                for (let i = index; i < project.Roles.length; i++)
+                if (!task.Completion[index])
                 {
-                    if (task.Completion[i])
-                    {
-                        isDoneUpper = true;
-                        break;
-                    }
+                    roles.push(role.Name);
                 }
-
-                if (!task.Completion[index] && !isDoneUpper) roles.push(role.Name);
 
                 // Check if we should break the loop
-                if (!task.Completion[index] && movingRole[index] !== undefined) break;
-                if (index === 0) continue;
+                if (!task.Completion[index] && (movingRole[index] !== undefined || Object.keys(movingRole).length === 0)) break;
+                if (index !== 0)
+                {
+                    let shouldBreak = false;
 
-                let shouldBreak = false;
+                    for (let i = index; i > 0; i--)
+                    {
+                        if (movingRole[i] === undefined) continue;
 
-                for (let i = index; i > 0; i--) {
-                    if (movingRole[i] === undefined) continue;
-
-                    if (!task.Completion[i] && index === movingRole[i]) {
-                        shouldBreak = true;
-                        break;
+                        if (!task.Completion[i] && index === movingRole[i]) {
+                            shouldBreak = true;
+                            break;
+                        }
                     }
-                }
 
-                if (shouldBreak) break;
+                    if (shouldBreak) break;
+                }
 
                 index++;
             }
@@ -712,10 +724,9 @@ export class DataController
         // Notify the users of the roles that they can start working on the new tasks
         for (const role in roles)
         {
-            let message = "";
-
-            message = `- **${role}**: ${usersAssignments[roles[role][0]][role].join(", ")}`;
-            let title = `New chapter${tasks.length > 1 ? "s" : ""} in project **${project.Title}**`;
+            const chapters = usersAssignments[roles[role][0]][role];
+            let message = `- **${role}**: chapter${chapters.length > 1 ? "s" : ""} ${chapters[0]}${chapters.length > 1 ? " to " + chapters[chapters.length - 1] : ""}`;
+            let title = `New task${tasks.length > 1 ? "s" : ""} available in project **${project.Title}**`;
 
             if (project.Notify === NotifyType.dm)
             {
@@ -751,21 +762,24 @@ export class DataController
 
         if (project === undefined) return;
 
-        let message = "";
-
-        for (const task of tasks)
-        {
-            message += `**${task.Name}**\n`;
-        }
-
-        let title = `Chapter${tasks.length > 1 ? "s" : ""} done`;
+        let message = `- Chapter${tasks.length > 1 ? "s" : ""} ${tasks[0].Name}${tasks.length > 1 ? " to " + tasks[tasks.length - 1].Name : ""}`;
+        let title = `Chapter${tasks.length > 1 ? "s" : ""} ready to be published`;
 
         if (project.Notify === NotifyType.dm)
         {
             title += ` in project **${project.Title}** on server **${interaction.guild.name}**`;
         }
 
-        this.SendMessage(interaction, projectId, project.ProjectManagers, EmbedUtility.GetGoodEmbedMessage(title, `The following chapters are done:\n${message}`));
+        const embed = EmbedUtility.GetGoodEmbedMessage(title, `The following chapters are done and ready to be published:\n${message}`);
+
+        if (project.ImageLink.startsWith("http"))
+        {
+            embed.setImage(project.ImageLink);
+        }
+
+        embed.setFooter({text: `Use /tasks to see your new tasks`});
+
+        this.SendMessage(interaction, projectId, project.ProjectManagers, embed);
     }
 
     SendMessage(interaction, projectId, users, embed)

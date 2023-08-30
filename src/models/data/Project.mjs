@@ -118,4 +118,9 @@ export class Project
 
         return embed;
     }
+
+    UpdateLastActionDate()
+    {
+        this.LastActionDate = new Date();
+    }
 }

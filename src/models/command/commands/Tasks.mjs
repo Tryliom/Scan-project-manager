@@ -28,6 +28,8 @@ class TaskInterface extends CommandInterface
     _selectedRoleIndex = 0;
     /** @type {Object<number, string[]>} */
     _chaptersForRole = {};
+    /** @type {boolean} */
+    _needToUpdateSelection = false;
 
     constructor(interaction)
     {
@@ -56,7 +58,8 @@ class TaskInterface extends CommandInterface
                     if (this.page >= this._tasks.length) this.page = 0;
                 },
                 getList: () => this._tasks,
-                options: {
+                options:
+                {
                     label: item => item.project.Title,
                     description: item => item.project.Description,
                     value: item => this._tasks.indexOf(item),
@@ -64,7 +67,36 @@ class TaskInterface extends CommandInterface
                 },
                 placeholder: "Select project.."
             },
-            //TODO: Add a menu to select the chapters to mark as done
+            {
+                onMenuClick: values =>
+                {
+                    const chapters = [];
+                    let i = 0;
+
+                    for (let chapter of this._chaptersForRole[this._selectedRoleIndex])
+                    {
+                        chapters.push(parseInt(chapter));
+
+                        if (i === parseInt(values[0])) break;
+
+                        i++;
+                    }
+
+                    ScanProjectManager.Instance.DataCenter.DoneChapters(this._tasks[this.page].serverId, this._tasks[this.page].project.Id, {chapters: chapters, role: this._selectedRoleIndex});
+
+                    if (chapters.length === this._chaptersForRole[this._selectedRoleIndex].length)
+                    {
+                        this._needToUpdateSelection = true;
+                    }
+                },
+                getList: () => this._chaptersForRole[this._selectedRoleIndex],
+                options:
+                {
+                    label: item => `Chapter ${item}`,
+                    value: item => this._chaptersForRole[this._selectedRoleIndex].indexOf(item),
+                },
+                placeholder: "Mark done up to.."
+            }
         ]);
         this.SetEphemeral(true);
     }
@@ -118,8 +150,8 @@ class TaskInterface extends CommandInterface
 
             if (chapters.length > 0)
             {
-                let role;
-                let prefix;
+                let role = "";
+                let prefix = "";
 
                 if (i === task.project.Roles.length)
                 {
@@ -130,12 +162,19 @@ class TaskInterface extends CommandInterface
                     role = task.project.Roles[i].Name;
                 }
 
-                if (tasks.length === this._selectedRoleIndex)
+                this._chaptersForRole[i] = chapters;
+
+                if (this._needToUpdateSelection)
+                {
+                    this._selectedRoleIndex = i;
+                    this._needToUpdateSelection = false;
+                }
+
+                if (i === this._selectedRoleIndex)
                 {
                     prefix = EmojiUtility.GetEmoji(EmojiUtility.Emojis.Right);
                 }
 
-                this._chaptersForRole[i] = chapters;
 
                 tasks.push(`- ${prefix} **${role}**: Chapter ${chapters[0]}${chapters.length > 1 ? ` to ${chapters[chapters.length - 1]}` : ""}`);
             }
@@ -158,17 +197,23 @@ class TaskInterface extends CommandInterface
         components.push(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`section_down`)
+                    .setCustomId(`down`)
                     .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Down))
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(this._selectedRoleIndex === Object.keys(this._chaptersForRole).length - 1),
                 new ButtonBuilder()
-                    .setCustomId(`section_up`)
+                    .setCustomId(`up`)
                     .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Up))
                     .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(this._selectedRoleIndex === 0)
+                    .setDisabled(this._selectedRoleIndex === 0),
+                new ButtonBuilder()
+                    .setCustomId(`refresh`)
+                    .setEmoji({name: "🔄"})
+                    .setStyle(ButtonStyle.Secondary)
             )
         );
+
+        this.AddMenuComponents(components, 1);
 
         if (this._tasks.length > 1)
         {
@@ -182,6 +227,17 @@ class TaskInterface extends CommandInterface
     async OnButton(interaction)
     {
         this.OnButtonChangePage(interaction, this._tasks.length, 0);
+
+        if (interaction.customId === "down")
+        {
+            const currentIndex = Object.keys(this._chaptersForRole).indexOf(this._selectedRoleIndex.toString());
+            this._selectedRoleIndex = parseInt(Object.keys(this._chaptersForRole)[currentIndex + 1]);
+        }
+        else if (interaction.customId === "up")
+        {
+            const currentIndex = Object.keys(this._chaptersForRole).indexOf(this._selectedRoleIndex.toString());
+            this._selectedRoleIndex = parseInt(Object.keys(this._chaptersForRole)[currentIndex - 1]);
+        }
     }
 
     OnAction()
