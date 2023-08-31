@@ -183,7 +183,7 @@ class ProjectManager extends CommandInterface
         /** @type {Project} */
         const project = projects[Object.keys(projects)[this.page]];
 
-        project.AddToEmbed(embed);
+        project.AddToEmbed(embed, true);
 
         embed.setFooter({text: `Page ${this.page + 1}/${projectLength}`});
 
@@ -207,7 +207,11 @@ class ProjectManager extends CommandInterface
                     new ButtonBuilder()
                         .setCustomId(`projects_delete`)
                         .setStyle(ButtonStyle.Danger)
-                        .setEmoji({name: "🗑️"})
+                        .setEmoji({name: "🗑️"}),
+                    new ButtonBuilder()
+                        .setCustomId(`refresh`)
+                        .setEmoji({name: "🔄"})
+                        .setStyle(ButtonStyle.Secondary)
                 )
             );
         }

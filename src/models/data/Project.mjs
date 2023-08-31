@@ -1,6 +1,7 @@
 import {ProjectRole} from "./ProjectRole.mjs";
 import {Task} from "./Task.mjs";
 import {v4} from "uuid";
+import {time} from "discord.js";
 
 export class NotifyType
 {
@@ -82,7 +83,7 @@ export class Project
         this.Roles = [];
         this.Tasks = [];
         this.LastTaskDone = data.LastTaskDone;
-        this.LastActionDate = data.LastActionDate;
+        this.LastActionDate = new Date(data.LastActionDate);
 
         for (const role of data.Roles)
         {
@@ -97,7 +98,7 @@ export class Project
         return this;
     }
 
-    AddToEmbed(embed)
+    AddToEmbed(embed, viewOnly = false)
     {
         const roles = this.Roles.map(value => value.GetSectionAsField(this.Roles)).join("\n\n");
         const projectManagers = this.ProjectManagers.map(value => `<@${value}>`).join("\n");
@@ -114,9 +115,40 @@ export class Project
             {name: "Auto chapter creation", value: this.AutoTask ? "✅" : "❌", inline: true},
         ]);
 
+        if (viewOnly)
+        {
+            embed.addFields([
+                {name: "Last update", value: `${time(this.LastActionDate, "R")}`, inline: true},
+                {name: "Last task done", value: this.LastTaskDone === "" ? "None" : `Chapter ${this.LastTaskDone}`, inline: true},
+                {name: "Last task created", value: this.Tasks.length === 0 ? "None" : `Chapter ${this.Tasks[this.Tasks.length - 1].Name}`, inline: true},
+            ]);
+
+            const advancement = [];
+
+            for (let i = 0; i < this.Roles.length; i++)
+            {
+                advancement.push(`- **${this.Roles[i].Name}**: ${this.GetRoleAdvancement(i)}`);
+            }
+
+            embed.addFields([
+                {name: "Advancement", value: advancement.join("\n")}
+            ]);
+        }
+
         if (this.ImageLink) embed.setImage(this.ImageLink);
 
         return embed;
+    }
+
+    GetRoleAdvancement(roleIndex)
+    {
+        for (const task of this.Tasks)
+        {
+            if (task.Completion[roleIndex]) continue;
+            else return `Chapter ${task.Name}`;
+        }
+
+        return "All done";
     }
 
     UpdateLastActionDate()
