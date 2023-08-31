@@ -51,6 +51,8 @@ export class Project
      * @brief The date of the last action that was done on the first task to do.
      * @type {Date} */
     LastActionDate = new Date()
+    /** @type {boolean} */
+    InactivityNotified = false
 
     constructor()
     {
@@ -67,6 +69,7 @@ export class Project
         this.Tasks = [];
         this.LastTaskDone = "";
         this.LastActionDate = new Date();
+        this.InactivityNotified = false;
     }
 
     FromJson(data)
@@ -84,6 +87,7 @@ export class Project
         this.Tasks = [];
         this.LastTaskDone = data.LastTaskDone;
         this.LastActionDate = new Date(data.LastActionDate);
+        this.InactivityNotified = data.InactivityNotified;
 
         for (const role of data.Roles)
         {
@@ -151,5 +155,6 @@ export class Project
     UpdateLastActionDate()
     {
         this.LastActionDate = new Date();
+        this.InactivityNotified = false;
     }
 }

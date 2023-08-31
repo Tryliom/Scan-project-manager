@@ -1,5 +1,5 @@
 import fs from "fs";
-import pkg, {Embed} from "discord.js";
+import pkg, {Embed, time} from "discord.js";
 
 import {Logger} from "../models/utility/Logger.mjs";
 import {StringUtility} from "../models/utility/StringUtility.mjs";
@@ -141,6 +141,26 @@ export class DataController
         for (const serverId in this._servers)
         {
             const server = this._servers[serverId];
+
+            // Check inactivity for projects
+            for (let projectId in server.Projects)
+            {
+                const project = server.Projects[projectId];
+                const lastActionDate = new Date(project.LastActionDate);
+                const difference = now - lastActionDate;
+                const days = difference / (1000 * 60 * 60 * 24);
+
+                if (days > 7 && !project.InactivityNotified)
+                {
+                    project.InactivityNotified = true;
+                    const embed = EmbedUtility.GetWarningEmbedMessage(`Project **${project.Title}** is inactive`,
+                        `Last action: ${time(lastActionDate, "R")}`);
+
+                    if (project.ImageLink.startsWith("http")) embed.setImage(project.ImageLink);
+
+                    this.SendMessage({guildId: serverId}, projectId, project.ProjectManagers, embed);
+                }
+            }
 
             if (!server.Stats.Enabled[StatsType.ChapterDone]) continue;
 
