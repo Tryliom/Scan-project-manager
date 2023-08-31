@@ -111,22 +111,19 @@ export class CustomMenu
 
             if (interaction.isStringSelectMenu())
             {
-                // Convert it to SelectMenuInteraction
-                const selectMenuInteraction = SelectMenuInteraction.from(interaction);
-
-                if (selectMenuInteraction.customId === "menu")
+                if (interaction.customId === "menu")
                 {
-                    if (selectMenuInteraction.values[0] === "less")
+                    if (interaction.values[0] === "less")
                     {
                         this.CurrentMenuPage--;
                     }
-                    else if (selectMenuInteraction.values[0] === "more")
+                    else if (interaction.values[0] === "more")
                     {
                         this.CurrentMenuPage++;
                     }
                     else
                     {
-                        this.Page = parseInt(selectMenuInteraction.values[0]);
+                        this.Page = parseInt(interaction.values[0]);
                     }
 
                     await this.updateView();

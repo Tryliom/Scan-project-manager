@@ -29,12 +29,11 @@ export class Help extends Command
             embedMessage.addFields(
                 {
                     name: "/" + command.Name + " " + command.Args,
-                    value: command.Description,
-                    inline: true
+                    value: command.Description
                 }
             );
 
-            if (embedMessage.data.fields.length === 5 || (index + 1) === this._commandController.Commands.length)
+            if (embedMessage.data.fields.length === 8 || (index + 1) === this._commandController.Commands.length)
             {
                 list.push(embedMessage);
                 embedMessage = getDefaultEmbed();
