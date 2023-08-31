@@ -23,7 +23,7 @@ import {EmbedUtility} from "../utility/EmbedUtility.mjs";
 import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
 import {v4} from "uuid";
 
-const CollectorTime = 90 * 60000;
+const CollectorTime = 180 * 60 * 1000;
 
 /**
  * Extend this class to create a command interface<br>
@@ -72,6 +72,8 @@ export class CommandInterface
     _closed
     /** @type {string} */
     _messageId = undefined
+    /** @type {any[]} */
+    _threads = []
 
     /** @type {Object<string, number>} */
     _menus = {}
@@ -149,7 +151,7 @@ export class CommandInterface
 
             if (this._modalSubmit)
             {
-                const submit = await this.LastInteraction.awaitModalSubmit({time: CollectorTime, filter: filter});
+                const submit = await this.LastInteraction.awaitModalSubmit({time: CollectorTime / 4, filter: filter});
 
                 if (submit)
                 {
@@ -169,6 +171,21 @@ export class CommandInterface
         this._messageId = (await interaction.fetchReply()).id;
 
         ScanProjectManager.Instance.SubscribeToEvent(this._id, this._collector);
+
+        this._threads.push(setTimeout(() => this.StopCollector(), CollectorTime));
+        this._threads.push(setInterval(async () =>
+        {
+            const interaction = this.LastInteraction || this.Interaction;
+            try
+            {
+                await interaction.fetchReply();
+            }
+            catch (error)
+            {
+                await this.StopCollector(false);
+            }
+
+        }, 1000 * 60));
     }
 
     /**
@@ -289,6 +306,12 @@ export class CommandInterface
 
         ScanProjectManager.Instance.UnsubscribeFromEvent(this._id);
         this._closed = true;
+
+        for (let thread of this._threads)
+        {
+            clearTimeout(thread);
+            clearInterval(thread);
+        }
     }
 
     /**

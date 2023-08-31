@@ -2,13 +2,14 @@ import APIMessageComponentEmoji, {
     Message, ButtonStyle, MessageComponentInteraction, EmbedBuilder, SelectMenuBuilder, ActionRowBuilder, ButtonBuilder, SelectMenuInteraction, StringSelectMenuBuilder
 } from "discord.js";
 
-import {SecurityUtility} from "../utility/SecurityUtility.mjs";
 import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
 import {EmbedUtility} from "../utility/EmbedUtility.mjs";
 import {Logger} from "../utility/Logger.mjs";
 import {v4} from "uuid";
 import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
+
+const CollectorTime = 180 * 60 * 1000;
 
 /**
  * @type {{next: ((function(CustomMenu): Promise<void>)), back: ((function(CustomMenu): Promise<void>))}}
@@ -58,6 +59,8 @@ export class CustomMenu
     _messageId
     /** @type {boolean} */
     _closed = false
+    /** @type {any[]} */
+    _threads = []
 
 
     /**
@@ -156,6 +159,21 @@ export class CustomMenu
         this._messageId = (await currentInteraction.fetchReply()).id;
 
         ScanProjectManager.Instance.SubscribeToEvent(this.Id, this.Collector);
+
+        this._threads.push(setTimeout(() => this.closeAll(), CollectorTime));
+        this._threads.push(setInterval(async () =>
+        {
+            const interaction = this.LastInteraction || this.Interaction;
+            try
+            {
+                await interaction.fetchReply();
+            }
+            catch (error)
+            {
+                await this.closeAll();
+            }
+
+        }, 1000 * 60));
     }
 
     async updateView()
@@ -284,11 +302,17 @@ export class CustomMenu
         if (!this._closed) await DiscordUtility.Reply(currentInteraction, {embeds: this.CurrentPage, components: components});
     }
 
-    async closeAll()
+    async closeAll(close = true)
     {
         ScanProjectManager.Instance.UnsubscribeFromEvent(this.Id);
         this._closed = true;
-        await DiscordUtility.Reply(this.LastInteraction || this.Interaction, EmbedUtility.GetClosedEmbedMessage());
+        if (close) await DiscordUtility.Reply(this.LastInteraction || this.Interaction, EmbedUtility.GetClosedEmbedMessage());
         setTimeout(() => (this.LastInteraction || this.Interaction).deleteReply(), 5000);
+
+        for (let thread of this._threads)
+        {
+            clearTimeout(thread);
+            clearInterval(thread);
+        }
     }
 }
