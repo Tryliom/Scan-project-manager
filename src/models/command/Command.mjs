@@ -26,6 +26,8 @@ export class Command
     OnlyProjectChannel = false
     /** @type {boolean} */
     OnlyInServer = false
+    /** @type {boolean} */
+    OnlyCreator = false
 
     constructor(name, args, minArgs, description)
     {
@@ -54,9 +56,14 @@ export class Command
         this.OnlyInServer = true;
     }
 
+    SetOnlyCreator()
+    {
+        this.OnlyCreator = true;
+    }
+
     AsSlashCommand()
     {
-        let description = StringUtility.CutText(this.Description, 100);
+        let description = StringUtility.CutText(this.OnlyCreator ? "이 봇을 만든 사람만 사용할 수 있는 명령입니다" : this.Description, 100);
 
         const slashCommand = new SlashCommandBuilder()
             .setName(this.Name)

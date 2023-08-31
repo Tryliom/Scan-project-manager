@@ -11,6 +11,25 @@ import {Projects} from "../models/command/commands/Projects.mjs";
 import {Chapters} from "../models/command/commands/Chapters.mjs";
 import {Tasks} from "../models/command/commands/Tasks.mjs";
 import {Info} from "../models/command/commands/Info.mjs";
+import {Panel} from "../models/command/commands/Panel.mjs";
+
+// Random funny message to display when a user doesn't have the permission to use a creator command
+const creatorErrorRandomMessages =
+[
+    "You doesn't have enough power to handle this command.",
+    "Your dark energy is not strong enough to handle this command.",
+    "Your cultivation stage is too low to handle this command.",
+    "You are not the chosen one to handle this command.",
+    "A superior entity prevent you from using this command.",
+    "You are not worthy to use this command.",
+    "You fool ! You can't handle this command !",
+    "Your qi is too weak to handle this command.",
+    "The dragon council doesn't knowledge you as a worthy user of this command.",
+    "Nooo, you're not the one I awaited for !",
+    "Only Kayden that fat cat can hope to use this command.",
+    "Your synchronization rate is too low to handle this command.",
+    "Available only for regressors."
+];
 
 export class CommandController
 {
@@ -27,7 +46,8 @@ export class CommandController
             new Projects(),
             new Chapters(),
             new Tasks(),
-            new Info()
+            new Info(),
+            new Panel()
         ];
     }
 
@@ -55,6 +75,13 @@ export class CommandController
                 await ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guildId).members.fetch();
             }
 
+            if (command.OnlyCreator && !SecurityUtility.IsCreator(interaction))
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(
+                    "Creator command",
+                    creatorErrorRandomMessages[Math.floor(Math.random() * creatorErrorRandomMessages.length)]
+                ), true)
+            }
             if (command.Admin && !SecurityUtility.IsAdmin(interaction))
             {
                 await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage(

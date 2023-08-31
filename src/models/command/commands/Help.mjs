@@ -15,21 +15,24 @@ export class Help extends Command
         const list = [];
         const getDefaultEmbed = () => EmbedUtility.GetGoodEmbedMessage("Help");
         let embedMessage = getDefaultEmbed();
+        const projectInChannel = this._scanProjectManager.DataCenter.GetProjectFromChannel(interaction);
 
         for (const command of this._commandController.Commands)
         {
             const index = this._commandController.Commands.indexOf(command);
 
-            if (command.Admin && SecurityUtility.IsAdmin(interaction) || !command.Admin)
-            {
-                embedMessage.addFields(
-                    {
-                        name: "/" + command.Name + " " + command.Args,
-                        value: command.Description,
-                        inline: true
-                    }
-                );
-            }
+            if (command.OnlyCreator && !SecurityUtility.IsCreator(interaction)) continue;
+            if (command.OnlyInServer && !interaction.guildId) continue;
+            if (command.OnlyProjectChannel && !projectInChannel) continue;
+            if (command.Admin && !SecurityUtility.IsAdmin(interaction)) continue;
+
+            embedMessage.addFields(
+                {
+                    name: "/" + command.Name + " " + command.Args,
+                    value: command.Description,
+                    inline: true
+                }
+            );
 
             if (embedMessage.data.fields.length === 5 || (index + 1) === this._commandController.Commands.length)
             {
