@@ -154,6 +154,23 @@ export class DataController
         return undefined;
     }
 
+    GetProjectsFromChannel(interaction)
+    {
+        if (this._servers[interaction.guildId] === undefined) return undefined;
+
+        const projects = this._servers[interaction.guildId].Projects;
+        const result = [];
+
+        for (const projectId in projects)
+        {
+            if (projects[projectId].ChannelId !== interaction.channelId) continue;
+
+            result.push(projects[projectId]);
+        }
+
+        return result;
+    }
+
     IsMultipleProjectsInChannel(interaction)
     {
         if (this._servers[interaction.guildId] === undefined) return false;

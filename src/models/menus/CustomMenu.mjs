@@ -7,6 +7,8 @@ import {StringUtility} from "../utility/StringUtility.mjs";
 import {DiscordUtility} from "../utility/DiscordUtility.mjs";
 import {EmbedUtility} from "../utility/EmbedUtility.mjs";
 import {Logger} from "../utility/Logger.mjs";
+import {v4} from "uuid";
+import {ScanProjectManager} from "../../controllers/ScanProjectManager.mjs";
 
 /**
  * @type {{next: ((function(CustomMenu): Promise<void>)), back: ((function(CustomMenu): Promise<void>))}}
@@ -52,6 +54,10 @@ export class CustomMenu
     CurrentMenuPage
     /** @type {string} */
     Id
+    /** @type {string} */
+    _messageId
+    /** @type {boolean} */
+    _closed = false
 
 
     /**
@@ -81,11 +87,78 @@ export class CustomMenu
         this.Page = 0;
         this.CurrentPage = this.Pages[this.Page];
         this.CurrentMenuPage = 0;
+        this.Id = v4();
     }
 
-    launchMenu()
+    async LaunchMenu()
     {
         this.updateView().catch(error => { Logger.Log(error); });
+
+        const currentInteraction = this.LastInteraction || this.Interaction;
+
+        const filter = (interaction) =>
+        {
+            const isUser = interaction.user.id === this.Interaction.user.id || interaction.user.id === process.env.creatorId;
+            const isCorrectMessage = interaction.message.id === this._messageId;
+
+            return isUser && isCorrectMessage;
+        };
+        this.Collector = async interaction =>
+        {
+            if (!filter(interaction)) return;
+
+            this.LastInteraction = interaction;
+
+            if (interaction.isStringSelectMenu())
+            {
+                // Convert it to SelectMenuInteraction
+                const selectMenuInteraction = SelectMenuInteraction.from(interaction);
+
+                if (selectMenuInteraction.customId === "menu")
+                {
+                    if (selectMenuInteraction.values[0] === "less")
+                    {
+                        this.CurrentMenuPage--;
+                    }
+                    else if (selectMenuInteraction.values[0] === "more")
+                    {
+                        this.CurrentMenuPage++;
+                    }
+                    else
+                    {
+                        this.Page = parseInt(selectMenuInteraction.values[0]);
+                    }
+
+                    await this.updateView();
+                }
+            }
+            else
+            {
+                if (this.Actions[this.Page])
+                {
+                    const action = this.Actions[this.Page][interaction.customId];
+
+                    if (action && action.function)
+                    {
+                        if (action.disableOnUse) action.disabled = true;
+                        if (action.disableAllOnUse) this.Actions[this.Page].forEach(item => item.disabled = true);
+
+                        action.function(this);
+
+                        if (action.closeOnUse) setTimeout(() => this.closeAll(), action.closeOnUse);
+                    }
+                }
+
+                if (defaultMenuAction[interaction.customId])    await defaultMenuAction[interaction.customId](this);
+                if (interaction.customId === "close")           await this.closeAll();
+            }
+
+            await DiscordUtility.Defer(interaction);
+        };
+
+        this._messageId = (await currentInteraction.fetchReply()).id;
+
+        ScanProjectManager.Instance.SubscribeToEvent(this.Id, this.Collector);
     }
 
     async updateView()
@@ -209,71 +282,15 @@ export class CustomMenu
             )
         );
 
-        const currentIntegration = this.LastInteraction || this.Interaction;
+        const currentInteraction = this.LastInteraction || this.Interaction;
 
-        await DiscordUtility.Reply(currentIntegration, {embeds: this.CurrentPage, components: components});
-
-        if (this.collector) this.collector.stop();
-
-        const filter = (i) => i.user.id === currentIntegration.user.id || SecurityUtility.IsAdmin(i);
-        /** @type {Message} */
-        const message = await currentIntegration.fetchReply();
-        this.collector = message.createMessageComponentCollector({filter, time: 60 * 60000});
-        this.collector.on("collect", async interaction =>
-        {
-            this.LastInteraction = interaction;
-
-            if (interaction.isStringSelectMenu())
-            {
-                // Convert it to SelectMenuInteraction
-                const selectMenuInteraction = SelectMenuInteraction.from(interaction);
-
-                if (selectMenuInteraction.customId === "menu")
-                {
-                    if (selectMenuInteraction.values[0] === "less")
-                    {
-                        this.CurrentMenuPage--;
-                    }
-                    else if (selectMenuInteraction.values[0] === "more")
-                    {
-                        this.CurrentMenuPage++;
-                    }
-                    else
-                    {
-                        this.Page = parseInt(selectMenuInteraction.values[0]);
-                    }
-
-                    await this.updateView();
-                }
-            }
-            else
-            {
-                if (this.Actions[this.Page])
-                {
-                    const action = this.Actions[this.Page][interaction.customId];
-
-                    if (action && action.function)
-                    {
-                        if (action.disableOnUse) action.disabled = true;
-                        if (action.disableAllOnUse) this.Actions[this.Page].forEach(item => item.disabled = true);
-
-                        action.function(this);
-
-                        if (action.closeOnUse) setTimeout(() => this.closeAll(), action.closeOnUse);
-                    }
-                }
-
-                if (defaultMenuAction[interaction.customId])    await defaultMenuAction[interaction.customId](this);
-                if (interaction.customId === "close")           await this.closeAll();
-            }
-
-            await DiscordUtility.Defer(interaction);
-        });
+        if (!this._closed) await DiscordUtility.Reply(currentInteraction, {embeds: this.CurrentPage, components: components});
     }
 
     async closeAll()
     {
-        this.collector.stop();
+        ScanProjectManager.Instance.UnsubscribeFromEvent(this.Id);
+        this._closed = true;
         await DiscordUtility.Reply(this.LastInteraction || this.Interaction, EmbedUtility.GetClosedEmbedMessage());
         setTimeout(() => (this.LastInteraction || this.Interaction).deleteReply(), 5000);
     }

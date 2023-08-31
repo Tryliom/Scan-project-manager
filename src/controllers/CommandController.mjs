@@ -10,6 +10,7 @@ import {Templates} from "../models/command/commands/Templates.mjs";
 import {Projects} from "../models/command/commands/Projects.mjs";
 import {Chapters} from "../models/command/commands/Chapters.mjs";
 import {Tasks} from "../models/command/commands/Tasks.mjs";
+import {Info} from "../models/command/commands/Info.mjs";
 
 export class CommandController
 {
@@ -25,7 +26,8 @@ export class CommandController
             new Templates(),
             new Projects(),
             new Chapters(),
-            new Tasks()
+            new Tasks(),
+            new Info()
         ];
     }
 

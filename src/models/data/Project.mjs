@@ -98,30 +98,27 @@ export class Project
         return this;
     }
 
-    AddToEmbed(embed, viewOnly = false)
+    AddToEmbed(embed, extraInfo = false, onlyBasicInfo = false)
     {
         const roles = this.Roles.map(value => value.GetSectionAsField(this.Roles)).join("\n\n");
         const projectManagers = this.ProjectManagers.map(value => `<@${value}>`).join("\n");
+        const fields = [];
 
-        embed.addFields([
-            {name: this.Title, value: this.Description},
-            {name: "Image link", value: this.ImageLink === "" ? "None" : this.ImageLink},
-            {name: "Links", value: this.Links === "" ? "None" : this.Links, inline: true},
-            {name: "Roles", value: roles === "" ? "None" : roles, inline: true},
-            {name: "\u200b", value: "\u200b"},
-            {name: "Project managers", value: projectManagers === "" ? "None" : projectManagers, inline: true},
-            {name: "Channel", value: `${this.ChannelId === "" ? "None" : `<#${this.ChannelId}>`}`, inline: true},
-            {name: "Notify", value: this.Notify._value, inline: true},
-            {name: "Auto chapter creation", value: this.AutoTask ? "✅" : "❌", inline: true},
-        ]);
+        fields.push({name: this.Title, value: this.Description});
+        if (!onlyBasicInfo) fields.push({name: "Image link", value: this.ImageLink === "" ? "None" : this.ImageLink});
+        fields.push({name: "Links", value: this.Links === "" ? "None" : this.Links, inline: true});
+        fields.push({name: "Roles", value: roles === "" ? "None" : roles, inline: true});
+        fields.push({name: "\u200b", value: "\u200b"});
+        fields.push({name: "Project managers", value: projectManagers === "" ? "None" : projectManagers, inline: true});
+        if (!onlyBasicInfo) fields.push({name: "Channel", value: `${this.ChannelId === "" ? "None" : `<#${this.ChannelId}>`}`, inline: true});
+        if (!onlyBasicInfo) fields.push({name: "Notify", value: this.Notify._value, inline: true});
+        if (!onlyBasicInfo) fields.push({name: "Auto chapter creation", value: this.AutoTask ? "✅" : "❌", inline: true});
 
-        if (viewOnly)
+        if (extraInfo)
         {
-            embed.addFields([
-                {name: "Last update", value: `${time(this.LastActionDate, "R")}`, inline: true},
-                {name: "Last task done", value: this.LastTaskDone === "" ? "None" : `Chapter ${this.LastTaskDone}`, inline: true},
-                {name: "Last task created", value: this.Tasks.length === 0 ? "None" : `Chapter ${this.Tasks[this.Tasks.length - 1].Name}`, inline: true},
-            ]);
+            fields.push({name: "Last update", value: `${time(this.LastActionDate, "R")}`, inline: true});
+            fields.push({name: "Last task done", value: this.LastTaskDone === "" ? "None" : `Chapter ${this.LastTaskDone}`, inline: true});
+            fields.push({name: "Last task created", value: this.Tasks.length === 0 ? "None" : `Chapter ${this.Tasks[this.Tasks.length - 1].Name}`, inline: true});
 
             const advancement = [];
 
@@ -130,10 +127,10 @@ export class Project
                 advancement.push(`- **${this.Roles[i].Name}**: ${this.GetRoleAdvancement(i)}`);
             }
 
-            embed.addFields([
-                {name: "Advancement", value: advancement.join("\n")}
-            ]);
+            fields.push({name: "Advancement", value: advancement.join("\n")});
         }
+
+        embed.addFields(fields);
 
         if (this.ImageLink) embed.setImage(this.ImageLink);
 

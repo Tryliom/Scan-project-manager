@@ -38,6 +38,6 @@ export class Help extends Command
             }
         }
 
-        new CustomMenu(interaction, list).launchMenu();
+        await new CustomMenu(interaction, list).LaunchMenu();
     }
 }
