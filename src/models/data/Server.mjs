@@ -1,5 +1,6 @@
 import {Template} from "./Template.mjs";
 import {Project} from "./Project.mjs";
+import {ServerStats} from "./ServerStats.mjs";
 
 export class Server
 {
@@ -7,17 +8,21 @@ export class Server
     Templates = []
     /** @type {Object<string, Project>} */
     Projects = {}
+    /** @type {ServerStats} */
+    Stats = new ServerStats()
 
     constructor()
     {
         this.Templates = [];
         this.Projects = {};
+        this.Stats = new ServerStats();
     }
 
     FromJson(data)
     {
         this.Templates = [];
         this.Projects = {};
+        if (data.Stats) this.Stats = new ServerStats().FromJson(data.Stats);
 
         for (const template of data.Templates)
         {

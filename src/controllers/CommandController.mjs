@@ -12,6 +12,7 @@ import {Chapters} from "../models/command/commands/Chapters.mjs";
 import {Tasks} from "../models/command/commands/Tasks.mjs";
 import {Info} from "../models/command/commands/Info.mjs";
 import {Panel} from "../models/command/commands/Panel.mjs";
+import {Stats} from "../models/command/commands/Stats.mjs";
 
 // Random funny message to display when a user doesn't have the permission to use a creator command
 const creatorErrorRandomMessages =
@@ -28,7 +29,8 @@ const creatorErrorRandomMessages =
     "Nooo, you're not the one I awaited for !",
     "Only Kayden that fat cat can hope to use this command.",
     "Your synchronization rate is too low to handle this command.",
-    "Available only for regressors."
+    "Available only for regressors.",
+    "Harry, you're not a wizard.",
 ];
 
 export class CommandController
@@ -47,6 +49,7 @@ export class CommandController
             new Chapters(),
             new Tasks(),
             new Info(),
+            new Stats(),
             new Panel()
         ];
     }

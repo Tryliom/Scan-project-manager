@@ -10,6 +10,7 @@ import {Task} from "../models/data/Task.mjs";
 import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {NotifyType} from "../models/data/Project.mjs";
 import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
+import {StatsType, TimeType, TimeTypeToString} from "../models/data/ServerStats.mjs";
 
 const {CommandInteraction} = pkg;
 
@@ -131,7 +132,85 @@ export class DataController
         }
     }
 
+    // Stats functions
+
+    DailyCheck(force = false)
+    {
+        const now = new Date();
+
+        for (const serverId in this._servers)
+        {
+            const server = this._servers[serverId];
+
+            if (!server.Stats.Enabled[StatsType.ChapterDone]) continue;
+
+            const lastUpdate = server.Stats.ChapterDoneTimeLastUpdate;
+            const week = 24 * 60 * 60 * 1000 * 7;
+            const month = 24 * 60 * 60 * 1000 * 30;
+
+            if (!force)
+            {
+                if (server.Stats.ChapterDoneTimeType === TimeType.Weekly && now - lastUpdate < week) continue;
+                if (server.Stats.ChapterDoneTimeType === TimeType.Monthly && now - lastUpdate < month) continue;
+                if (server.Stats.ChannelId === "") continue;
+            }
+
+            const channel = ScanProjectManager.Instance.DiscordClient.channels.cache.get(server.Stats.ChannelId);
+
+            if (!channel) continue;
+
+            const embed = EmbedUtility.GetNeutralEmbedMessage(`${TimeTypeToString(server.Stats.ChapterDoneTimeType)} stats`);
+            const fields = [];
+
+            // Transform the data to an array format
+            const formattedData = [];
+
+            for (const userId in server.Stats.ChapterDoneTimeSpecific)
+            {
+                const chapterDone = server.Stats.ChapterDoneTimeSpecific[userId];
+
+                formattedData.push({userId: userId, chapterDone: chapterDone});
+            }
+
+            // Sort the array
+            formattedData.sort((a, b) => b.chapterDone - a.chapterDone);
+
+            // Add the fields
+            for (const data of formattedData)
+            {
+                fields.push(`<@${data.userId}>: ${data.chapterDone} chapter${data.chapterDone > 1 ? "s" : ""}`);
+
+                if (fields.length === 30) break;
+            }
+
+            if (fields.length > 0)
+            {
+                embed.addFields({name: "Top chapter done", value: fields.join("\n")});
+            }
+            else
+            {
+                embed.setDescription("No data available");
+            }
+
+            try
+            {
+                channel.send(EmbedUtility.FormatMessageContent(embed));
+            }
+            catch (error) {}
+
+            server.Stats.ChapterDoneTimeLastUpdate = now;
+            server.Stats.ChapterDoneTimeSpecific = {};
+        }
+    }
+
     // Information functions
+
+    GetServerStats(serverId)
+    {
+        if (this._servers[serverId] === undefined) return undefined;
+
+        return this._servers[serverId].Stats;
+    }
 
     /**
      * @brief Get the project from the channel where the interaction was made.
@@ -373,6 +452,7 @@ export class DataController
      * @param projectId
      * @param work {{chapters: number[] | string[], role: number}}
      * @constructor
+     * @returns {number} The number of tasks done
      */
     DoneChapters(serverId, projectId, work)
     {
@@ -384,6 +464,7 @@ export class DataController
 
         const doneTasks = [];
         const updatedTasks = [];
+        let tasksDone = 0;
 
         for (const chapter of work.chapters)
         {
@@ -400,7 +481,12 @@ export class DataController
                     continue;
                 }
 
-                project.Tasks[index].Completion[work.role] = true;
+                if (!project.Tasks[index].Completion[work.role])
+                {
+                    tasksDone++;
+                    project.Tasks[index].Completion[work.role] = true;
+                }
+
 
                 if (project.Tasks[index].IsAllCompleted())
                 {
@@ -429,6 +515,8 @@ export class DataController
 
         this.NotifyTasksDone(fakeInteraction, projectId, doneTasks);
         this.NotifyTasksUpdate(fakeInteraction, projectId, updatedTasks);
+
+        return tasksDone;
     }
 
     // Notification functions

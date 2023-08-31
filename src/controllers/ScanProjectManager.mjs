@@ -26,9 +26,11 @@ export class ScanProjectManager
 
         this.CommandCenter.Initialize();
         //this.DataCenter.Backup();
+        this.DataCenter.DailyCheck();
 
         setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);
         setInterval(() => this.DataCenter.SaveAll(), 1000 * 60);
+        setInterval(() => this.DataCenter.DailyCheck(), 1000 * 60 * 60 * 24);
 
         this.DiscordClient = new Client({intents: [
             GatewayIntentBits.Guilds,

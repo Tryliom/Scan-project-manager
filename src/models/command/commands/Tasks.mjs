@@ -4,6 +4,7 @@ import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
+import {StatsType} from "../../data/ServerStats.mjs";
 
 export class Tasks extends Command
 {
@@ -82,7 +83,13 @@ class TaskInterface extends CommandInterface
                         i++;
                     }
 
-                    ScanProjectManager.Instance.DataCenter.DoneChapters(this._tasks[this.page].serverId, this._tasks[this.page].project.Id, {chapters: chapters, role: this._selectedRoleIndex});
+                    const tasksDone = ScanProjectManager.Instance.DataCenter.DoneChapters(this._tasks[this.page].serverId, this._tasks[this.page].project.Id, {chapters: chapters, role: this._selectedRoleIndex});
+                    const serverStats = ScanProjectManager.Instance.DataCenter.GetServerStats(this._tasks[this.page].serverId);
+
+                    if (serverStats && serverStats.Enabled[StatsType.ChapterDone])
+                    {
+                        serverStats.IncreaseChapterDone(this.Interaction.user.id, tasksDone);
+                    }
 
                     if (chapters.length === this._chaptersForRole[this._selectedRoleIndex].length)
                     {
