@@ -10,12 +10,15 @@ export class Server
     Projects = {}
     /** @type {ServerStats} */
     Stats = new ServerStats()
+    /** @type {string} */
+    BotInformationChannelId = ""
 
     constructor()
     {
         this.Templates = [];
         this.Projects = {};
         this.Stats = new ServerStats();
+        this.BotInformationChannelId = "";
     }
 
     FromJson(data)
@@ -23,6 +26,7 @@ export class Server
         this.Templates = [];
         this.Projects = {};
         if (data.Stats) this.Stats = new ServerStats().FromJson(data.Stats);
+        if (data.BotInformationChannelId) this.BotInformationChannelId = data.BotInformationChannelId;
 
         for (const template of data.Templates)
         {

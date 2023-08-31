@@ -11,6 +11,7 @@ import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {NotifyType} from "../models/data/Project.mjs";
 import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
 import {StatsType, TimeType, TimeTypeToString} from "../models/data/ServerStats.mjs";
+import {Changelog} from "../models/data/Changelog.mjs";
 
 const {CommandInteraction} = pkg;
 
@@ -41,6 +42,7 @@ const DataPath = "./assets/data/";
 const BackupPath = "./assets/backup/";
 const UsersName = "users.json";
 const ServersName = "servers.json";
+const ChangelogsName = "changelogs.json";
 
 export class DataController
 {
@@ -48,15 +50,19 @@ export class DataController
     _users
     /** @type {Object<string, Server>} */
     _servers
+    /** @type {Changelog[]} */
+    _changelogs = []
 
     constructor()
     {
         this._servers = {};
         this._users = {};
+        this._changelogs = [];
 
         // Load data from file
         this._users = LoadFile(DataPath + UsersName);
         this._servers = LoadFile(DataPath + ServersName);
+        this._changelogs = LoadFile(DataPath + ChangelogsName);
 
         // Convert data to User objects
         for (const userId in this._users)
@@ -75,12 +81,19 @@ export class DataController
         {
             this._servers[serverId] = new Server().FromJson(this._servers[serverId]);
         }
+
+        // Convert data to Changelog objects
+        for (const changelog of this._changelogs)
+        {
+            this._changelogs.push(new Changelog().FromJson(changelog));
+        }
     }
 
     SaveAll()
     {
         SaveJsonToFile(DataPath + UsersName, this._users);
         SaveJsonToFile(DataPath + ServersName, this._servers);
+        SaveJsonToFile(DataPath + ChangelogsName, this._changelogs);
 
         Logger.Log("Saved all data");
     }
@@ -89,8 +102,9 @@ export class DataController
     {
         const usersLength = Object.keys(this._users).length;
         const serversLength = Object.keys(this._servers).length;
+        const changelogsLength = this._changelogs.length;
 
-        if (usersLength === 0 && serversLength === 0) return;
+        if (usersLength === 0 && serversLength === 0 && changelogsLength === 0) return;
 
         const path = BackupPath + StringUtility.FormatDate(new Date());
 
@@ -98,6 +112,7 @@ export class DataController
 
         if (usersLength > 0)    SaveJsonToFile(`${path}/${UsersName}`, this._users);
         if (serversLength > 0)  SaveJsonToFile(`${path}/${ServersName}`, this._servers);
+        if (changelogsLength > 0) SaveJsonToFile(`${path}/${ChangelogsName}`, this._changelogs);
 
         Logger.Log("Backed up all data");
     }
@@ -230,6 +245,13 @@ export class DataController
         if (this._servers[serverId] === undefined) return undefined;
 
         return this._servers[serverId].Stats;
+    }
+
+    GetServer(serverId)
+    {
+        if (this._servers[serverId] === undefined) return undefined;
+
+        return this._servers[serverId];
     }
 
     /**

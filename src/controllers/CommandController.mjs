@@ -13,6 +13,7 @@ import {Tasks} from "../models/command/commands/Tasks.mjs";
 import {Info} from "../models/command/commands/Info.mjs";
 import {Panel} from "../models/command/commands/Panel.mjs";
 import {Stats} from "../models/command/commands/Stats.mjs";
+import {Server} from "../models/command/commands/Server.mjs";
 
 // Random funny message to display when a user doesn't have the permission to use a creator command
 const creatorErrorRandomMessages =
@@ -50,6 +51,7 @@ export class CommandController
             new Tasks(),
             new Info(),
             new Stats(),
+            new Server(),
             new Panel()
         ];
     }
