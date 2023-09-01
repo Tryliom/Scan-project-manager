@@ -143,8 +143,7 @@ export class CommandInterface
 
             if (this.IgnoreInteractions) return;
 
-            if (interaction.isModalSubmit()) await this.OnModalSubmit(interaction);
-            else if (interaction.isButton()) await this.OnButtonClick(interaction);
+            if (interaction.isButton()) await this.OnButtonClick(interaction);
             else if (interaction.isAnySelectMenu()) await this.OnMenuClick(interaction);
 
             await DiscordUtility.Defer(interaction);
@@ -199,7 +198,7 @@ export class CommandInterface
 
         if (this.IgnoreInteractions) return;
 
-        this.OnAction();
+        await this.OnAction();
 
         if (this.Error !== "")
         {
@@ -290,7 +289,7 @@ export class CommandInterface
      */
     async OnModal(interaction) {}
 
-    OnAction() {}
+    async OnAction() {}
 
     async StopCollector(closeMessage = true)
     {

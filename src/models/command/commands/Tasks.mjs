@@ -247,7 +247,7 @@ class TaskInterface extends CommandInterface
         }
     }
 
-    OnAction()
+    async OnAction()
     {
         this._tasks = ScanProjectManager.Instance.DataCenter.GetProjectWithTasks(this.Interaction.user.id);
     }

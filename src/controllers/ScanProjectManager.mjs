@@ -3,6 +3,7 @@ import {Client, GatewayIntentBits} from "discord.js";
 import {CommandController} from "./CommandController.mjs";
 import {DataController} from "./DataController.mjs";
 import {Logger} from "../models/utility/Logger.mjs";
+import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 
 export class ScanProjectManager
 {
@@ -17,6 +18,8 @@ export class ScanProjectManager
 
     /** @type {Object<string, Function>[]} */
     _events = []
+    /** @type {Date} */
+    _startedAt = new Date()
 
     constructor()
     {
@@ -100,6 +103,14 @@ export class ScanProjectManager
                 }
             }
         });
+
+        process.on('uncaughtException', (error) => {
+            console.error(error);
+        });
+
+        process.on('unhandledRejection', (error) => {
+            console.error(error);
+        });
     }
 
     SubscribeToEvent(id, event)
@@ -124,7 +135,7 @@ export class ScanProjectManager
         Logger.Log("Emergency exit", reason);
 
         // Send message to creator in DM with the reason
-        await this.SendDM(process.env.creatorID, `Emergency exit: ${reason}`);
+        await this.SendDM(process.env.creatorID, EmbedUtility.FormatMessageContent(EmbedUtility.GetWarningEmbedMessage("Emergency exit", reason)));
 
         process.exit();
     }
@@ -162,5 +173,10 @@ export class ScanProjectManager
         const channel = await server.channels.fetch(channelId);
 
         await channel.send(message);
+    }
+
+    GetUptime()
+    {
+        return this._startedAt;
     }
 }

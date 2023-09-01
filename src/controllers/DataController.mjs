@@ -1,5 +1,5 @@
 import fs from "fs";
-import pkg, {Embed, time} from "discord.js";
+import pkg, {time} from "discord.js";
 
 import {Logger} from "../models/utility/Logger.mjs";
 import {StringUtility} from "../models/utility/StringUtility.mjs";
@@ -9,7 +9,6 @@ import {ScanProjectManager} from "./ScanProjectManager.mjs";
 import {Task} from "../models/data/Task.mjs";
 import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {NotifyType} from "../models/data/Project.mjs";
-import {DiscordUtility} from "../models/utility/DiscordUtility.mjs";
 import {StatsType, TimeType, TimeTypeToString} from "../models/data/ServerStats.mjs";
 import {Changelog} from "../models/data/Changelog.mjs";
 
@@ -239,6 +238,74 @@ export class DataController
     }
 
     // Information functions
+
+    GetChangelogsNewer()
+    {
+        // Get the changelogs in reverse order
+        return this._changelogs.slice().reverse();
+    }
+
+    AddChangelog(changelog)
+    {
+        this._changelogs.push(changelog);
+
+        const embed = EmbedUtility.FormatMessageContent(EmbedUtility.GetNeutralEmbedMessage(`Changelog v${changelog.Version}`, changelog.Changes));
+
+        for (const serverId in this._servers)
+        {
+            // Then, publish it
+            const server = this._servers[serverId];
+
+            if (server.BotInformationChannelId === "") continue;
+
+            const channel = ScanProjectManager.Instance.DiscordClient.channels.cache.get(server.BotInformationChannelId);
+
+            if (!channel) continue;
+
+            try
+            {
+                channel.send(embed);
+            }
+            catch (error) {}
+        }
+    }
+
+    /**
+     *
+     * @return {Guild[]}
+     */
+    GetAllGuilds()
+    {
+        const servers = [];
+
+        for (const serverId in this._servers)
+        {
+            let server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(serverId);
+
+            if (!server) continue;
+
+            servers.push(server);
+        }
+
+        return servers;
+    }
+
+    async FetchGuilds()
+    {
+        for (const serverId in this._servers)
+        {
+            let server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(serverId);
+
+            if (!server)
+            {
+                try
+                {
+                    await ScanProjectManager.Instance.DiscordClient.guilds.fetch(serverId);
+                }
+                catch (error) {}
+            }
+        }
+    }
 
     GetServerStats(serverId)
     {

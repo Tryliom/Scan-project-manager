@@ -12,7 +12,7 @@ export class Help extends Command
 
     async Run(interaction)
     {
-        const list = [];
+        const embeds = [];
         const getDefaultEmbed = () => EmbedUtility.GetGoodEmbedMessage("Help");
         let embedMessage = getDefaultEmbed();
         const projectInChannel = this._scanProjectManager.DataCenter.GetProjectFromChannel(interaction);
@@ -35,11 +35,11 @@ export class Help extends Command
 
             if (embedMessage.data.fields.length === 8 || (index + 1) === this._commandController.Commands.length)
             {
-                list.push(embedMessage);
+                embeds.push(embedMessage);
                 embedMessage = getDefaultEmbed();
             }
         }
 
-        await new CustomMenu(interaction, list).LaunchMenu();
+        await new CustomMenu(interaction, embeds).LaunchMenu();
     }
 }

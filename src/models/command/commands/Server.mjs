@@ -25,6 +25,7 @@ class ServerInterface extends CommandInterface
     {
         super(interaction);
 
+        this.SetEphemeral(true);
         this.SetMenuList([
             {
                 onMenuClick: values =>
