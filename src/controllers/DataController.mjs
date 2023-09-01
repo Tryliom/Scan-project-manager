@@ -34,7 +34,7 @@ function LoadFile(path)
     }
     else
     {
-        return {};
+        return undefined;
     }
 }
 
@@ -60,9 +60,9 @@ export class DataController
         this._changelogs = [];
 
         // Load data from file
-        this._users = LoadFile(DataPath + UsersName);
-        this._servers = LoadFile(DataPath + ServersName);
-        this._changelogs = LoadFile(DataPath + ChangelogsName);
+        this._users = LoadFile(DataPath + UsersName) || {};
+        this._servers = LoadFile(DataPath + ServersName) || {};
+        this._changelogs = LoadFile(DataPath + ChangelogsName) || [];
 
         // Convert data to User objects
         for (const userId in this._users)

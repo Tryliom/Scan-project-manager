@@ -523,8 +523,8 @@ export class CommandInterface
             case "changepage-back+": this.page -= 25; break;
         }
 
-        if (this.page > maxPage-1)  this.page = 0;
-        else if (this.page < 0)     this.page = maxPage-1;
+        if (this.page > maxPage - 1)  this.page = maxPage - 1;
+        else if (this.page < 0)     this.page = 0;
 
         if (interaction.customId.startsWith("changepage"))
         {

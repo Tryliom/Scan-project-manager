@@ -6,6 +6,7 @@ import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 import {ProjectEditor} from "../../menus/interfaces/ProjectEditor.mjs";
 import {Project} from "../../data/Project.mjs";
+import {ConfirmationInterface} from "../../menus/interfaces/ConfirmationInterface.mjs";
 
 export class Projects extends Command
 {
@@ -263,10 +264,23 @@ class ProjectManager extends CommandInterface
         }
         else if (interaction.customId === "projects_delete")
         {
-            ScanProjectManager.Instance.DataCenter.NotifyProjectDeletion(this.Interaction, projects[Object.keys(projects)[this.page]]);
+            this.IgnoreInteractions = true;
 
-            delete projects[Object.keys(projects)[this.page]];
-            this.page = 0;
+            await new ConfirmationInterface(this.Interaction, interaction, "Are you sure you want to delete this project ?", (response, lastInteraction) =>
+                {
+                    if (response)
+                    {
+                        ScanProjectManager.Instance.DataCenter.NotifyProjectDeletion(this.Interaction, projects[Object.keys(projects)[this.page]]);
+
+                        delete projects[Object.keys(projects)[this.page]];
+                        this.page = 0;
+                    }
+
+                    this.IgnoreInteractions = false;
+                    this.LastInteraction = lastInteraction;
+                    this.UpdateMsg();
+                }
+            ).Start();
         }
     }
 }
