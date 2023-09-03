@@ -52,7 +52,7 @@ export class ScanProjectManager
             await this.DiscordClient.user.setActivity(`/help | v${process.env.npm_package_version}`);
             await this.CommandCenter.RefreshSlashCommands();
 
-            //this.DataCenter.Backup();
+            this.DataCenter.Backup();
             this.DataCenter.DailyCheck();
 
             setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);
