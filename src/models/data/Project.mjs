@@ -136,7 +136,7 @@ export class Project
 
         embed.addFields(fields);
 
-        if (this.ImageLink) embed.setImage(this.ImageLink);
+        if (this.ImageLink && this.ImageLink.startsWith("http")) embed.setImage(this.ImageLink);
 
         return embed;
     }
