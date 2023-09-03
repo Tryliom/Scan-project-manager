@@ -131,6 +131,8 @@ export class Project
                 advancement.push(`- **${this.Roles[i].Name}**: ${this.GetRoleAdvancement(i)}`);
             }
 
+            advancement.push(`- **Last chapter published**: ${this.LastTaskDone === "" ? "None" : `Chapter ${this.LastTaskDone}`}`);
+
             fields.push({name: "Advancement", value: advancement.join("\n")});
         }
 
