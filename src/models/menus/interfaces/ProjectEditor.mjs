@@ -440,6 +440,10 @@ export class ProjectEditor extends CommandInterface
         {
             return {name: "⚠️ Error", value: "You need to specify a channel if you want to use channel notifications."};
         }
+        else if (this._project.ImageLink !== "" && !this._project.ImageLink.startsWith("http"))
+        {
+            return {name: "⚠️ Error", value: "The image link must start with \"http\"."};
+        }
 
         return null;
     }
