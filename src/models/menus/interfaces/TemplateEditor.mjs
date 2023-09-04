@@ -549,6 +549,7 @@ export class TemplateEditor extends CommandInterface
         return {name: "Moving", value: "You can make a section as 'moving', it means that the role can be done in the same time as the next sections until their moving limit you can set. The limit is included within." +
                 "\nThey are marked as `RoleName -> MovingRoleName`." +
                 "\nFor example: You have the sections `Clean`, `Translation`, `Check` and `Edit`." +
-                "\nIf you set `Clean` as moving up to `Check`, it means that the `Clean` role can be done at the same time as `Translation` and `Edit`."};
+                "\nIf you set `Clean` as moving up to `Check`, it means that the `Clean` role can be done at the same time as `Translation` and `Edit`." +
+                "\nYou **must** put the moving role before roles that can be done at the same time."};
     }
 }
