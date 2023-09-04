@@ -7,6 +7,7 @@ import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {exec} from "child_process";
 import {Changelog} from "../../data/Changelog.mjs";
 import {DiscordUtility} from "../../utility/DiscordUtility.mjs";
+import {Faq} from "../../data/Faq.mjs";
 
 export class Panel extends Command
 {
@@ -27,6 +28,8 @@ class PanelInterface extends CommandInterface
 {
     /** @type {boolean} */
     _servers = false
+    /** @type {boolean} */
+    _faq = false
     /** @type {boolean} */
     _updated = false
     /** @type {number} */
@@ -62,13 +65,24 @@ class PanelInterface extends CommandInterface
                 },
                 options: {label: item => item.label, description: item => item.description, value: item => item.value, default: item => item.default || false},
                 placeholder: "Select server.."
+            },
+            // List of faqs
+            {
+                onMenuClick: values => this.page = parseInt(values[0]),
+                getList: () => ScanProjectManager.Instance.DataCenter.GetFaqs(),
+                options: {
+                    label: item => item.Question,
+                    description: item => item.Answer,
+                    value: item => ScanProjectManager.Instance.DataCenter.GetFaqs().indexOf(item),
+                    default: item => ScanProjectManager.Instance.DataCenter.GetFaqs().indexOf(item) === this.page
+                },
+                placeholder: "Select faq.."
             }
         ]);
     }
 
     async OnAction()
     {
-
         if (!this._preloaded) await ScanProjectManager.Instance.DataCenter.FetchGuilds();
         const servers = ScanProjectManager.Instance.DataCenter.GetAllGuilds();
 
@@ -107,6 +121,21 @@ class PanelInterface extends CommandInterface
                 {name: "\u200B", value: "\u200B"},
                 {name: "Infos", value: `${serverData.Templates.length} templates\n${Object.keys(serverData.Projects).length} projects`},
             ]);
+        }
+        else if (this._faq)
+        {
+            // List of faqs
+            const faqs = ScanProjectManager.Instance.DataCenter.GetFaqs();
+
+            if (faqs.length === 0)
+            {
+                embed.setDescription("There are no faqs available.");
+                return embed;
+            }
+
+            const faq = faqs[this.page];
+
+            embed.setDescription(`**${faq.Question}**\n\n${faq.Answer}`);
         }
         else
         {
@@ -155,6 +184,40 @@ class PanelInterface extends CommandInterface
                 )
             );
         }
+        else if (this._faq)
+        {
+            // List of faqs
+            const faqs = ScanProjectManager.Instance.DataCenter.GetFaqs();
+
+            if (faqs.length > 1)
+            {
+                this.AddMenuComponents(components, 1);
+                components.push(this.GetChangePageButtons());
+            }
+
+            components.push(
+                new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`return`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Return)),
+                    new ButtonBuilder()
+                        .setCustomId(`faq_edit`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji({name: "✏️"})
+                        .setDisabled(faqs.length === 0),
+                    new ButtonBuilder()
+                        .setCustomId(`faq_add`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Add)),
+                    new ButtonBuilder()
+                        .setCustomId(`faq_delete`)
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji({name: "🗑️"})
+                        .setDisabled(faqs.length === 0)
+                )
+            );
+        }
         else
         {
             components.push(
@@ -174,6 +237,11 @@ class PanelInterface extends CommandInterface
                         .setLabel("Add changelog")
                         .setStyle(ButtonStyle.Secondary)
                         .setEmoji({name: "📝"}),
+                    new ButtonBuilder()
+                        .setCustomId(`faqs`)
+                        .setLabel("Faqs manager")
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji({name: "❓"}),
                     new ButtonBuilder()
                         .setCustomId(`servers`)
                         .setLabel("Servers")
@@ -206,15 +274,107 @@ class PanelInterface extends CommandInterface
                 this.OnButtonChangePage(interaction, servers.length, 0);
             }
         }
+        else if (this._faq)
+        {
+            // List of faqs
+            const faqs = ScanProjectManager.Instance.DataCenter.GetFaqs();
+
+            if (interaction.customId === "return")
+            {
+                this._faq = false;
+            }
+            else if (interaction.customId === "faq_edit")
+            {
+                // Open a modal to edit a faq
+                const modal = new ModalBuilder()
+                    .setCustomId("faq_edit")
+                    .setTitle("Faq edition")
+
+                modal.addComponents(
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('question')
+                            .setLabel("Question")
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder("The question")
+                            .setMinLength(1)
+                            .setMaxLength(150)
+                            .setValue(faqs[this.page].Question)
+                            .setRequired(true)
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('answer')
+                            .setLabel("Answer")
+                            .setStyle(TextInputStyle.Paragraph)
+                            .setPlaceholder("The answer")
+                            .setMinLength(1)
+                            .setMaxLength(3999)
+                            .setValue(faqs[this.page].Answer)
+                            .setRequired(true)
+                    )
+                );
+
+                await this.ShowModal(modal);
+            }
+            else if (interaction.customId === "faq_delete")
+            {
+                await ScanProjectManager.Instance.DataCenter.DeleteFaq(faqs[this.page]);
+                this.page = 0;
+            }
+            else if (interaction.customId === "faq_add")
+            {
+                // Open a modal to add a faq
+                const modal = new ModalBuilder()
+                    .setCustomId("faq_create")
+                    .setTitle("Faq creation")
+
+                modal.addComponents(
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('question')
+                            .setLabel("Question")
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder("The question")
+                            .setMinLength(1)
+                            .setMaxLength(150)
+                            .setRequired(true)
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('answer')
+                            .setLabel("Answer")
+                            .setStyle(TextInputStyle.Paragraph)
+                            .setPlaceholder("The answer")
+                            .setMinLength(1)
+                            .setMaxLength(3999)
+                            .setRequired(true)
+                    )
+                );
+
+                await this.ShowModal(modal);
+            }
+            else
+            {
+                this.OnButtonChangePage(interaction, faqs.length, 1);
+            }
+        }
         else
         {
             if (interaction.customId === "servers")
             {
                 this._servers = true;
+                this.page = 0;
+            }
+            else if (interaction.customId === "faqs")
+            {
+                this._faq = true;
+                this.page = 0;
             }
             else if (interaction.customId === "restart")
             {
                 await DiscordUtility.Defer(interaction);
+                ScanProjectManager.Instance.DataCenter.SaveAll();
                 process.exit();
             }
             else if (interaction.customId === "update")
@@ -281,6 +441,27 @@ class PanelInterface extends CommandInterface
             changelog.Changes = interaction.fields.getTextInputValue('changes');
 
             await ScanProjectManager.Instance.DataCenter.AddChangelog(changelog);
+        }
+        else if (interaction.customId === "faq_edit")
+        {
+            const faqs = ScanProjectManager.Instance.DataCenter.GetFaqs();
+            const faq = faqs[this.page];
+
+            faq.Question = interaction.fields.getTextInputValue('question');
+            faq.Answer = interaction.fields.getTextInputValue('answer');
+
+            await this.UpdateMsg();
+        }
+        else if (interaction.customId === "faq_create")
+        {
+            const faq = new Faq();
+
+            faq.Question = interaction.fields.getTextInputValue('question');
+            faq.Answer = interaction.fields.getTextInputValue('answer');
+
+            ScanProjectManager.Instance.DataCenter.AddFaq(faq);
+
+            await this.UpdateMsg();
         }
     }
 }

@@ -484,6 +484,8 @@ export class TemplateEditor extends CommandInterface
                     role.Moving--;
                 }
             }
+
+            this._sectionIndex = Math.max(this._sectionIndex - 1, 0);
         }
 
         this.SaveOldState();

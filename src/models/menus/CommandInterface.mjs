@@ -277,7 +277,6 @@ export class CommandInterface
     async OnModalSubmit(interaction)
     {
         await this.OnModal(interaction);
-
         await this.UpdateMsg();
     }
 

@@ -11,6 +11,7 @@ import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 import {NotifyType} from "../models/data/Project.mjs";
 import {StatsType, TimeType, TimeTypeToString} from "../models/data/ServerStats.mjs";
 import {Changelog} from "../models/data/Changelog.mjs";
+import {BotInfo} from "../models/data/BotInfo.mjs";
 
 const {CommandInteraction} = pkg;
 
@@ -41,7 +42,7 @@ const DataPath = "./assets/data/";
 const BackupPath = "./assets/backup/";
 const UsersName = "users.json";
 const ServersName = "servers.json";
-const ChangelogsName = "changelogs.json";
+const BotInfoName = "bot.json";
 
 export class DataController
 {
@@ -49,19 +50,19 @@ export class DataController
     _users
     /** @type {Object<string, Server>} */
     _servers
-    /** @type {Changelog[]} */
-    _changelogs = []
+    /** @type {BotInfo} */
+    _botInfos
 
     constructor()
     {
         this._servers = {};
         this._users = {};
-        this._changelogs = [];
+        this._botInfos = new BotInfo();
 
         // Load data from file
         this._users = LoadFile(DataPath + UsersName) || {};
         this._servers = LoadFile(DataPath + ServersName) || {};
-        this._changelogs = LoadFile(DataPath + ChangelogsName) || [];
+        this._botInfos = LoadFile(DataPath + BotInfoName) || this._botInfos;
 
         // Convert data to User objects
         for (const userId in this._users)
@@ -81,18 +82,15 @@ export class DataController
             this._servers[serverId] = new Server().FromJson(this._servers[serverId]);
         }
 
-        // Convert data to Changelog objects
-        for (const changelog of this._changelogs)
-        {
-            this._changelogs.push(new Changelog().FromJson(changelog));
-        }
+        // Convert data to BotInfo objects
+        this._botInfos = new BotInfo().FromJson(this._botInfos);
     }
 
     SaveAll()
     {
         SaveJsonToFile(DataPath + UsersName, this._users);
         SaveJsonToFile(DataPath + ServersName, this._servers);
-        SaveJsonToFile(DataPath + ChangelogsName, this._changelogs);
+        SaveJsonToFile(DataPath + BotInfoName, this._botInfos);
 
         Logger.Log("Saved all data");
     }
@@ -101,9 +99,8 @@ export class DataController
     {
         const usersLength = Object.keys(this._users).length;
         const serversLength = Object.keys(this._servers).length;
-        const changelogsLength = this._changelogs.length;
 
-        if (usersLength === 0 && serversLength === 0 && changelogsLength === 0) return;
+        if (usersLength === 0 && serversLength === 0) return;
 
         const path = BackupPath + StringUtility.FormatDate(new Date());
 
@@ -111,7 +108,7 @@ export class DataController
 
         if (usersLength > 0)    SaveJsonToFile(`${path}/${UsersName}`, this._users);
         if (serversLength > 0)  SaveJsonToFile(`${path}/${ServersName}`, this._servers);
-        if (changelogsLength > 0) SaveJsonToFile(`${path}/${ChangelogsName}`, this._changelogs);
+        SaveJsonToFile(`${path}/${BotInfoName}`, this._botInfos);
 
         Logger.Log("Backed up all data");
     }
@@ -242,12 +239,12 @@ export class DataController
     GetChangelogsNewer()
     {
         // Get the changelogs in reverse order
-        return this._changelogs.slice().reverse();
+        return this._botInfos.Changelogs.slice().reverse();
     }
 
     AddChangelog(changelog)
     {
-        this._changelogs.push(changelog);
+        this._botInfos.Changelogs.push(changelog);
 
         const embed = EmbedUtility.FormatMessageContent(EmbedUtility.GetNeutralEmbedMessage(`Changelog v${changelog.Version}`, changelog.Changes));
 
@@ -268,6 +265,21 @@ export class DataController
             }
             catch (error) {}
         }
+    }
+
+    GetFaqs()
+    {
+        return this._botInfos.Faqs;
+    }
+
+    AddFaq(faq)
+    {
+        this._botInfos.Faqs.push(faq);
+    }
+
+    DeleteFaq(index)
+    {
+        this._botInfos.Faqs.splice(index, 1);
     }
 
     /**
