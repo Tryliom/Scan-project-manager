@@ -18,7 +18,7 @@ export class Template
             new ProjectRole().FromJson({Name: "Clean", Users: [], Moving: 2}),
             new ProjectRole().FromJson({Name: "Translation", Users: []}),
             new ProjectRole().FromJson({Name: "Check", Users: []}),
-            new ProjectRole().FromJson({Name: "Edit", Users: []}),
+            new ProjectRole().FromJson({Name: "Typesetter", Users: []}),
             new ProjectRole().FromJson({Name: "Quality check", Users: []})
         ];
     }
