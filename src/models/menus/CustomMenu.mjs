@@ -45,8 +45,7 @@ export class CustomMenu
     /** @type {{text: string, url: string, color: ButtonStyle,
      * emoji: APIMessageComponentEmoji, disabled: boolean, function(CustomMenu): Function, disableOnUse: boolean, disableAllOnUse: boolean, closeOnUse: Integer}[][]} */
     Actions
-    /** @type {{label: string, description: string, emoji: string}[]} */
-    MenuPages
+
     /** @type {number} */
     Page
     /** @type {EmbedBuilder} */
@@ -61,6 +60,8 @@ export class CustomMenu
     _closed = false
     /** @type {any[]} */
     _threads = []
+    /** @type {boolean} */
+    _usePageNumber = true
 
 
     /**
@@ -69,9 +70,8 @@ export class CustomMenu
      * @param pages {EmbedBuilder[]}
      * @param actions {{text: string, url: string, color: ButtonStyle,
      * emoji: APIMessageComponentEmoji, disabled: boolean, function(CustomMenu): Function, disableOnUse: boolean, disableAllOnUse: boolean, closeOnUse: Integer}[][]}
-     * @param menuPages {{label: string, description: string, emoji: string}[]}
      */
-    constructor(interaction, pages, actions = [], menuPages = [])
+    constructor(interaction, pages, actions = [])
     {
         // Set a footer to each embed with the page number if there is no footer
         for (let page of pages)
@@ -84,13 +84,19 @@ export class CustomMenu
         this.Interaction = interaction;
         this.Pages = pages;
         this.Actions = actions;
-        this.MenuPages = menuPages;
 
         this.LastInteraction = null;
         this.Page = 0;
         this.CurrentPage = this.Pages[this.Page];
         this.CurrentMenuPage = 0;
         this.Id = v4();
+    }
+
+    SetUsePageNumber(usePageNumber)
+    {
+        this._usePageNumber = usePageNumber;
+
+        return this;
     }
 
     async LaunchMenu()
@@ -181,15 +187,7 @@ export class CustomMenu
         this.CurrentPage = this.Pages[this.Page];
         const components = [];
 
-        if (this.MenuPages.length === 0 && this.Pages.length > 1)
-        {
-            for (let i = 1; i <= this.Pages.length; i++)
-            {
-                this.MenuPages.push({description: `Page ${i}`}); // Used after and set correctly
-            }
-        }
-
-        if (this.MenuPages.length > 1)
+        if (this.Pages.length > 1)
         {
             const options = [];
 
@@ -203,9 +201,10 @@ export class CustomMenu
             if (this.CurrentMenuPage > 0) minElements = 24;
             if (this.CurrentMenuPage !== 1) minElements += (this.CurrentMenuPage - 1) * 22;
 
-            for (let menuPage of this.MenuPages)
+            for (let embed of this.Pages)
             {
-                const index = this.MenuPages.indexOf(menuPage);
+                const index = this.Pages.indexOf(embed);
+                const option = {};
 
                 if (minElements > index) continue;
 
@@ -215,18 +214,18 @@ export class CustomMenu
                     break;
                 }
 
-                let label = index === this.Page ? "Current" : `Page ${index + 1}`;
+                let label = `Page ${index + 1}`;
 
-                if (menuPage.label) label = menuPage.label;
+                if (!this._usePageNumber)
+                {
+                    label = this.Pages[index].data.title;
 
-                const option =
-                    {
-                        label: index === this.Page ? "Current" : `Page ${index + 1}`,
-                        description: StringUtility.CutText(menuPage.description, 100),
-                        value: `${index}`,
-                    };
+                    option.description = StringUtility.CutText(this.Pages[index].data.description, 100);
+                }
 
-                if (menuPage.emoji) option.emoji = menuPage.emoji;
+                option.label = StringUtility.CutText(label, 25);
+                option.value = `${index}`;
+
                 if (index === this.Page) option.default = true;
 
                 options.push(option);

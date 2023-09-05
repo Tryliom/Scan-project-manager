@@ -8,7 +8,13 @@ export class Chapters extends Command
 {
     constructor()
     {
-        super("chapters", "add, remove, from", 1, "Add/remove chapter(s) to/from a project.");
+        super("chapters", "add, remove, from", 1, "Add/remove chapter(s) to/from a project.",
+            "Add/remove chapter(s) to/from a project.\nIn order to add or remove chapters, you will need to use a special format.\n" +
+            "### `\-` (dash)\n" +
+            "This is used to create chapters like `1-3` will create chapters 1, 2, 3.\n" +
+            "If you use `1.5-3.5`, it will create chapters 1.5, 2, 2.5, 3, 3.5.\n" +
+            "### `,` (comma)\n" +
+            "Used to separate chapters. Like `1-3, 3.5, 4-7` will create chapters 1, 2, 3, 3.5, 4, 5, 6, 7.");
 
         this.SetOnlyInServer();
     }

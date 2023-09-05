@@ -13,7 +13,7 @@ export class Panel extends Command
 {
     constructor()
     {
-        super("panel", "", 0, "Show a panel to restart and update the bot");
+        super("panel", "", 0, "Show a panel to restart and update the bot.");
 
         this.SetOnlyCreator();
     }
@@ -460,6 +460,7 @@ class PanelInterface extends CommandInterface
             faq.Answer = interaction.fields.getTextInputValue('answer');
 
             ScanProjectManager.Instance.DataCenter.AddFaq(faq);
+            this.page = ScanProjectManager.Instance.DataCenter.GetFaqs().length - 1;
 
             await this.UpdateMsg();
         }

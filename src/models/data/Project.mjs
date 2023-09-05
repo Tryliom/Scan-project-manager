@@ -102,13 +102,13 @@ export class Project
         return this;
     }
 
-    AddToEmbed(embed, extraInfo = false, onlyBasicInfo = false)
+    AddToEmbed(embed, extraInfo = false, onlyBasicInfo = false, withTitleAndDescription = true)
     {
         const roles = this.Roles.map(value => value.GetSectionAsField(this.Roles)).join("\n\n");
         const projectManagers = this.ProjectManagers.map(value => `<@${value}>`).join("\n");
         const fields = [];
 
-        fields.push({name: this.Title, value: this.Description});
+        if (withTitleAndDescription) fields.push({name: this.Title, value: this.Description});
         if (!onlyBasicInfo) fields.push({name: "Image link", value: this.ImageLink === "" ? "None" : this.ImageLink});
         fields.push({name: "Links", value: this.Links === "" ? "None" : this.Links, inline: true});
         fields.push({name: "Roles", value: roles === "" ? "None" : roles, inline: true});

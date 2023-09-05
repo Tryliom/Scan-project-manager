@@ -9,7 +9,8 @@ export class Stats extends Command
 {
     constructor()
     {
-        super("stats", "", 0, "Open statistics panel to manage stats for the server.");
+        super("stats", "", 0, "Open statistics panel to manage stats for the server.",
+            "Open statistics panel to manage stats for the server. You can enable to announce every week/month the number of chapters done by all users in a specific channel.");
 
         this.SetOnlyInServer();
         this.SetAdmin();

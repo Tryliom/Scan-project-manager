@@ -6,7 +6,8 @@ export class Info extends Command
 {
     constructor()
     {
-        super("info", "", 0, "Show information about a project.");
+        super("info", "", 0, "Show information about a project in his channel.",
+            "Show information about a project. If there is more than one project associated to the channel, it will show all of them on different pages.");
 
         this.SetOnlyInServer();
         this.SetOnlyProjectChannel();
@@ -19,15 +20,13 @@ export class Info extends Command
 
         for (let i = 0; i < projects.length; i++)
         {
-            const embed = EmbedUtility.GetNeutralEmbedMessage("Project info");
+            const embed = EmbedUtility.GetNeutralEmbedMessage(projects[i].Title, projects[i].Description);
 
-            projects[i].AddToEmbed(embed, true, true);
-
-            embed.setFooter({text: `Project ${i + 1}/${projects.length}`});
+            projects[i].AddToEmbed(embed, true, true, false);
 
             embeds.push(embed);
         }
 
-        await new CustomMenu(interaction, embeds).LaunchMenu();
+        await new CustomMenu(interaction, embeds).SetUsePageNumber(false).LaunchMenu();
     }
 }

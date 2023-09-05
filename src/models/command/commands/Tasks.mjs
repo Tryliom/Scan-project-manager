@@ -10,7 +10,9 @@ export class Tasks extends Command
 {
     constructor()
     {
-        super("tasks", "", 0, "Show all your tasks.");
+        super("tasks", "", 0, "Show all your tasks/chapters to do.",
+            "This command will show you all the tasks/chapters you have to do for all your projects. If you do the command in a project channel, it will show you the tasks/chapters for this project directly.\n" +
+            "There is more information in /faq command.");
     }
 
     async Run(interaction)

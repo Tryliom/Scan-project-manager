@@ -12,7 +12,8 @@ export class Projects extends Command
 {
     constructor()
     {
-        super("projects", "", 0, "Manage projects.");
+        super("projects", "", 0, "Manage projects.",
+            "List, create, edit and delete projects. There is a guide to use it in /faq.");
 
         this.SetOnlyInServer();
         this.SetAdmin();

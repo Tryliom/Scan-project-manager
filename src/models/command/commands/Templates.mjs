@@ -11,7 +11,8 @@ export class Templates extends Command
 {
     constructor()
     {
-        super("templates", "", 0, "Manage templates.");
+        super("templates", "", 0, "Manage templates.", "List, create, edit and delete templates.\n" +
+            "Templates are used to create projects. They contain the role names and people assigned to them. Usually used for different teams.");
 
         this.SetOnlyInServer();
         this.SetAdmin();
@@ -104,8 +105,7 @@ class TemplateManager extends CommandInterface
             {name: `ℹ️  Info`, value: "Templates are used to create projects. They contain the role names and people assigned to them. Usually used for different teams."},
             {name: '\u200b', value: '\u200b'},
             {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.List)}  List`, value: "List all your templates to edit them."},
-            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Add)}  Create`, value: "Create a new template."},
-            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Import)}  Import`, value: "Import a template from your projects."}
+            {name: `${EmojiUtility.GetEmoji(EmojiUtility.Emojis.Add)}  Create`, value: "Create a new template."}
         ]);
 
         return embed;

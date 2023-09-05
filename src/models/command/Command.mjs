@@ -20,6 +20,8 @@ export class Command
     MinArgs
     /** @type {string} */
     Description
+    /** @type {string} */
+    LongDescription
     /** @type {boolean} */
     Admin = false
     /** @type {boolean} */
@@ -29,12 +31,13 @@ export class Command
     /** @type {boolean} */
     OnlyCreator = false
 
-    constructor(name, args, minArgs, description)
+    constructor(name, args, minArgs, description, longDescription = "")
     {
         this.Name = name;
         this.Args = args;
         this.MinArgs = minArgs;
         this.Description = description;
+        this.LongDescription = longDescription;
 
         this._scanProjectManager = ScanProjectManager.Instance;
         this._commandController = this._scanProjectManager.CommandCenter;

@@ -7,7 +7,8 @@ export class Faq extends Command
 {
     constructor()
     {
-        super("faq", "", 0, "If you forgot or don't know how to do things, go check with this.");
+        super("faq", "", 0, "If you forgot or don't know how to do things, go check with this.",
+            "If you forgot or don't know how to do things, it's very useful to go read the FAQ with this command. Like how to create a project, a template, how works the chapters, etc.");
     }
 
     async Run(interaction)
@@ -25,6 +26,6 @@ export class Faq extends Command
             embeds.push(EmbedUtility.GetNeutralEmbedMessage("No FAQ found"));
         }
 
-        await new CustomMenu(interaction, embeds).LaunchMenu();
+        await new CustomMenu(interaction, embeds).SetUsePageNumber(false).LaunchMenu();
     }
 }

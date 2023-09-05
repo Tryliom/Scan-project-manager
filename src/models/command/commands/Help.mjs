@@ -7,14 +7,14 @@ export class Help extends Command
 {
     constructor()
     {
-        super("help", "", 0, "Show all available commands.");
+        super("help", "", 0, "Show all available commands.", "Show all available commands with more explanations.");
     }
 
     async Run(interaction)
     {
         const embeds = [];
-        const getDefaultEmbed = () => EmbedUtility.GetGoodEmbedMessage("Help");
-        let embedMessage = getDefaultEmbed();
+        let description = "";
+        let count = 0;
         const projectInChannel = this._scanProjectManager.DataCenter.GetProjectFromChannel(interaction);
 
         for (const command of this._commandController.Commands)
@@ -26,17 +26,17 @@ export class Help extends Command
             if (command.OnlyProjectChannel && !projectInChannel) continue;
             if (command.Admin && !SecurityUtility.IsAdmin(interaction)) continue;
 
-            embedMessage.addFields(
-                {
-                    name: "/" + command.Name + " " + command.Args,
-                    value: command.Description
-                }
-            );
+            const args = command.Args !== "" ? `options: \`${command.Args}\`` : "";
+            const desc = command.LongDescription !== "" ? command.LongDescription : command.Description;
 
-            if (embedMessage.data.fields.length === 8 || (index + 1) === this._commandController.Commands.length)
+            description += `## /${command.Name} ${args}\n${desc}\n`;
+            count++;
+
+            if (count === 5 || (index + 1) === this._commandController.Commands.length)
             {
-                embeds.push(embedMessage);
-                embedMessage = getDefaultEmbed();
+                embeds.push(EmbedUtility.GetGoodEmbedMessage("Help").setDescription(description));
+                description = "";
+                count = 0;
             }
         }
 

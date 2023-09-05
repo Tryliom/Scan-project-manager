@@ -7,7 +7,8 @@ export class Server extends Command
 {
     constructor()
     {
-        super("server", "", 0, "Open server settings");
+        super("server", "", 0, "Open server settings.",
+            "Open server settings. Currently only the bot information channel can be set (where changelog are sent).")
 
         this.SetOnlyInServer();
         this.SetAdmin();

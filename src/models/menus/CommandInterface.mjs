@@ -159,6 +159,7 @@ export class CommandInterface
                     await this.OnModalSubmit(submit);
                 }
 
+                await this.UpdateMsg();
                 await DiscordUtility.Defer(submit);
             }
         };

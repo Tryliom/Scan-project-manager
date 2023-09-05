@@ -7,7 +7,7 @@ export class Changelogs extends Command
 {
     constructor()
     {
-        super("changelogs", "", 0, "Show all changelogs.");
+        super("changelogs", "", 0, "Show all changelogs.", "Show all changelogs. You can set a channel to receive them automatically with /server command.");
     }
 
     async Run(interaction)
@@ -28,6 +28,6 @@ export class Changelogs extends Command
             embeds.push(EmbedUtility.GetNeutralEmbedMessage("No changelogs", "There are no changelogs available."));
         }
 
-        await new CustomMenu(interaction, embeds).LaunchMenu();
+        await new CustomMenu(interaction, embeds).SetUsePageNumber(false).LaunchMenu();
     }
 }
