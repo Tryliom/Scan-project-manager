@@ -22,7 +22,7 @@ export class DiscordUtility
 
         try
         {
-            if (interaction instanceof CommandInteraction)
+            if (interaction instanceof CommandInteraction && !interaction.replied)
             {
                 await interaction.reply(content);
             }
