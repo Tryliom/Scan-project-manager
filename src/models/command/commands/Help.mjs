@@ -40,6 +40,11 @@ export class Help extends Command
             }
         }
 
+        if (count > 0)
+        {
+            embeds.push(EmbedUtility.GetGoodEmbedMessage("Help").setDescription(description));
+        }
+
         await new CustomMenu(interaction, embeds).LaunchMenu();
     }
 }
