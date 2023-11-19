@@ -62,7 +62,14 @@ class TaskInterface extends CommandInterface
 
                     if (this.page >= this._tasks.length) this.page = 0;
                 },
-                getList: () => this._tasks,
+                getList: () =>
+                {
+                    const value = this._tasks;
+
+                    console.log("Tasks", value);
+
+                    return value;
+                },
                 options:
                 {
                     label: item => item.project.Title,
@@ -100,7 +107,13 @@ class TaskInterface extends CommandInterface
                         this._needToUpdateSelection = true;
                     }
                 },
-                getList: () => this._chaptersForRole[this._selectedRoleIndex],
+                getList: () => {
+                    const value = this._chaptersForRole[this._selectedRoleIndex];
+
+                    console.log("Chapters", value);
+
+                    return value;
+                },
                 options:
                 {
                     label: item => `Chapter ${item}`,

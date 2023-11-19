@@ -413,8 +413,6 @@ export class CommandInterface
         if (page > 0)   minElements = 24;
         if (page !== 1) minElements += (page - 1) * 22;
 
-        console.log(list);
-
         for (let item of list)
         {
             if (minElements > list.indexOf(item)) continue;
