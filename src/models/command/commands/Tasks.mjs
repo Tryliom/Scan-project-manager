@@ -131,6 +131,9 @@ class TaskInterface extends CommandInterface
 
         /** @type {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}} */
         const task = this._tasks[this.page];
+
+        console.log("Task", task, this._tasks, this.page);
+
         const server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(task.serverId);
 
         if (!server)
@@ -214,7 +217,7 @@ class TaskInterface extends CommandInterface
 
     ConstructComponents()
     {
-        if (this._tasks.length === 0 || !this._chaptersForRole[this._selectedRoleIndex]) return [];
+        if (this._tasks.length === 0) return [];
 
         const components = [];
 
