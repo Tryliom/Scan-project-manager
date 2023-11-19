@@ -100,13 +100,7 @@ class TaskInterface extends CommandInterface
                         this._needToUpdateSelection = true;
                     }
                 },
-                getList: () => {
-                    const value = this._chaptersForRole[this._selectedRoleIndex];
-
-                    console.log("Chapters", value, this._chaptersForRole, this._selectedRoleIndex);
-
-                    return value;
-                },
+                getList: () => this._chaptersForRole[this._selectedRoleIndex],
                 options:
                 {
                     label: item => `Chapter ${item}`,
@@ -124,7 +118,6 @@ class TaskInterface extends CommandInterface
 
         if (this._tasks.length === 0)
         {
-            console.log("No tasks");
             embed.setDescription("You have no tasks.");
             return embed;
         }
@@ -135,9 +128,8 @@ class TaskInterface extends CommandInterface
 
         if (!server)
         {
-            console.log("Server not found", task.serverId);
-
-            return embed.setDescription("This project server doesn't exist anymore or is not available.");
+            return embed.setDescription("This project server doesn't exist anymore or is not available.\n" +
+                "Ask the bot creator to remove the project server from the database via support server available in /help command.");
         }
 
         embed.addFields([
@@ -159,9 +151,6 @@ class TaskInterface extends CommandInterface
 
         const tasks = [];
         this._chaptersForRole = {};
-
-        console.log("Roles", task.project.Roles);
-        console.log("Tasks", task.tasks);
 
         for (let i = 0; i <= task.project.Roles.length; i++)
         {

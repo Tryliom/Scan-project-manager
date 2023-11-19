@@ -119,7 +119,7 @@ export class DataController
      */
     InitData(interaction)
     {
-        if (interaction.guildId !== undefined)
+        if (interaction.guildId)
         {
             this.CreateServerIfNotExist(interaction.guildId);
         }
@@ -283,8 +283,32 @@ export class DataController
     }
 
     /**
-     *
-     * @return {Guild[]}
+     * @brief Delete the server from the data, delete from users the work related to the server.
+     * @param serverId {string} The id of the server to delete.
+     */
+    DeleteServerData(serverId)
+    {
+        // First, go through all the users and delete the work related to the server
+        for (const userId in this._users)
+        {
+            const works = this._users[userId];
+
+            for (let i = 0; i < works.length; i++)
+            {
+                if (works[i].ServerId === serverId)
+                {
+                    works.splice(i, 1);
+                }
+            }
+        }
+
+        // Then, delete the server
+        delete this._servers[serverId];
+    }
+
+    /**
+     * @brief Get all guilds where the bot is.
+     * @return {Guild[]} The guilds where the bot is.
      */
     GetAllGuilds()
     {
@@ -317,6 +341,11 @@ export class DataController
                 catch (error) {}
             }
         }
+    }
+
+    GetServers()
+    {
+        return this._servers;
     }
 
     GetServerStats(serverId)

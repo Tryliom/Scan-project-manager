@@ -32,6 +32,8 @@ class PanelInterface extends CommandInterface
     _faq = false
     /** @type {boolean} */
     _updated = false
+    /** @type {boolean} */
+    _rawServers = false
     /** @type {number} */
     page = 0;
     /** @type {boolean} */
@@ -77,6 +79,31 @@ class PanelInterface extends CommandInterface
                     default: item => ScanProjectManager.Instance.DataCenter.GetFaqs().indexOf(item) === this.page
                 },
                 placeholder: "Select faq.."
+            },
+            // List all servers without data
+            {
+                onMenuClick: values => this.page = parseInt(values[0]),
+                getList: () =>
+                {
+                    const servers = ScanProjectManager.Instance.DataCenter.GetServers();
+                    const keys = Object.keys(servers);
+                    const list = [];
+
+                    for (const serverID of keys)
+                    {
+                        const index = keys.indexOf(serverID);
+                        const server = servers[serverID];
+                        const option = {label: serverID, description: `${Object.keys(server.Projects).length} projects`, value: index};
+
+                        if (index === this.page) option.default = true;
+
+                        list.push(option);
+                    }
+
+                    return list;
+                },
+                options: {label: item => item.label, description: item => item.description, value: item => item.value, default: item => item.default || false},
+                placeholder: "Select server.."
             }
         ]);
     }
@@ -136,6 +163,50 @@ class PanelInterface extends CommandInterface
             const faq = faqs[this.page];
 
             embed.setDescription(`**${faq.Question}**\n\n${faq.Answer}`);
+        }
+        else if (this._rawServers)
+        {
+            // List all servers without data
+            const servers = ScanProjectManager.Instance.DataCenter.GetServers();
+            const keys = Object.keys(servers);
+
+            if (keys.length === 0)
+            {
+                embed.setDescription("There are no servers available.");
+                return embed;
+            }
+
+            const liveServers = ScanProjectManager.Instance.DataCenter.GetAllGuilds();
+            let serverLive = null;
+
+            for (let server of liveServers)
+            {
+                if (server.id === keys[this.page])
+                {
+                    serverLive = server;
+                    break;
+                }
+            }
+
+            const server = servers[keys[this.page]];
+            const projects = [];
+
+            for (let projectID in server.Projects)
+            {
+                const project = server.Projects[projectID];
+                projects.push(`- ${project.Title} (${projectID})`);
+
+                if (projects.length === 10) break;
+            }
+
+            let desc = `**${keys[this.page]}** ${Object.keys(server.Projects).length} projects:\n${projects.join("\n")}`;
+
+            if (serverLive)
+            {
+                desc += `\n\nKnown as **${serverLive.name}**`;
+            }
+
+            embed.setDescription(desc);
         }
         else
         {
@@ -218,6 +289,32 @@ class PanelInterface extends CommandInterface
                 )
             );
         }
+        else if (this._rawServers)
+        {
+            // List all servers without data
+            const servers = ScanProjectManager.Instance.DataCenter.GetServers();
+            const keys = Object.keys(servers);
+
+            if (keys.length > 1)
+            {
+                this.AddMenuComponents(components, 2);
+                components.push(this.GetChangePageButtons());
+            }
+
+            components.push(
+                new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`return`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Return)),
+                    new ButtonBuilder()
+                        .setCustomId(`raw_server_delete`)
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji({name: "🗑️"})
+                        .setDisabled(keys.length === 0)
+                )
+            );
+        }
         else
         {
             components.push(
@@ -245,6 +342,16 @@ class PanelInterface extends CommandInterface
                     new ButtonBuilder()
                         .setCustomId(`servers`)
                         .setLabel("Servers")
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji({name: "🌐"})
+                )
+            );
+
+            components.push(
+                new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`raw_servers`)
+                        .setLabel("Raw servers")
                         .setStyle(ButtonStyle.Secondary)
                         .setEmoji({name: "🌐"})
                 )
@@ -359,6 +466,26 @@ class PanelInterface extends CommandInterface
                 this.OnButtonChangePage(interaction, faqs.length, 1);
             }
         }
+        else if (this._rawServers)
+        {
+            // List all servers without data
+            const servers = ScanProjectManager.Instance.DataCenter.GetServers();
+            const keys = Object.keys(servers);
+
+            if (interaction.customId === "return")
+            {
+                this._rawServers = false;
+            }
+            else if (interaction.customId === "raw_server_delete")
+            {
+                await ScanProjectManager.Instance.DataCenter.DeleteServerData(keys[this.page]);
+                this.page = 0;
+            }
+            else
+            {
+                this.OnButtonChangePage(interaction, keys.length, 2);
+            }
+        }
         else
         {
             if (interaction.customId === "servers")
@@ -427,6 +554,11 @@ class PanelInterface extends CommandInterface
                 );
 
                 await this.ShowModal(modal);
+            }
+            else if (interaction.customId === "raw_servers")
+            {
+                this._rawServers = true;
+                this.page = 0;
             }
         }
     }
