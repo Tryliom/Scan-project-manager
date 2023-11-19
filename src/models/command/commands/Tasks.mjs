@@ -100,14 +100,7 @@ class TaskInterface extends CommandInterface
                         this._needToUpdateSelection = true;
                     }
                 },
-                getList: () =>
-                {
-                    const value = this._chaptersForRole[this._selectedRoleIndex];
-
-                    console.log(value, this._chaptersForRole, this._selectedRoleIndex);
-
-                    return value;
-                },
+                getList: () => this._chaptersForRole[this._selectedRoleIndex],
                 options:
                 {
                     label: item => `Chapter ${item}`,
@@ -129,11 +122,14 @@ class TaskInterface extends CommandInterface
             return embed;
         }
 
+        // Check if the page is not out of bound
+        if (this.page >= this._tasks.length)
+        {
+            this.page = 0;
+        }
+
         /** @type {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}} */
         const task = this._tasks[this.page];
-
-        console.log("Task", task, this._tasks, this.page);
-
         const server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(task.serverId);
 
         if (!server)
@@ -204,7 +200,7 @@ class TaskInterface extends CommandInterface
                 tasks.push(`- ${prefix} **${role}**: Chapter ${chapters[0]}${chapters.length > 1 ? ` to ${chapters[chapters.length - 1]}` : ""}`);
             }
         }
-        
+
         let found = false;
 
         for (let i = 0; i < Object.keys(this._chaptersForRole).length; i++)
