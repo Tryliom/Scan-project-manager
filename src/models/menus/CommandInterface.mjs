@@ -231,7 +231,10 @@ export class CommandInterface
      */
     GetContent(content = null)
     {
-        return EmbedUtility.FormatMessageContent(content || {embeds: this.ConstructEmbed(), components: this.ConstructComponents()});
+        const embed = this.ConstructEmbed();
+        const components = this.ConstructComponents();
+
+        return EmbedUtility.FormatMessageContent(content || {embeds: embed, components: components});
     }
 
     /**

@@ -124,6 +124,7 @@ class TaskInterface extends CommandInterface
 
         if (this._tasks.length === 0)
         {
+            console.log("No tasks");
             embed.setDescription("You have no tasks.");
             return embed;
         }
@@ -132,7 +133,12 @@ class TaskInterface extends CommandInterface
         const task = this._tasks[this.page];
         const server = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(task.serverId);
 
-        if (!server) return embed.setDescription("This project server doesn't exist anymore or is not available.");
+        if (!server)
+        {
+            console.log("Server not found", task.serverId);
+
+            return embed.setDescription("This project server doesn't exist anymore or is not available.");
+        }
 
         embed.addFields([
             {name: "Name", value: `${task.project.Title} from ${server.name}`},
@@ -210,7 +216,7 @@ class TaskInterface extends CommandInterface
 
     ConstructComponents()
     {
-        if (this._tasks.length === 0) return [];
+        if (this._tasks.length === 0 || !this._chaptersForRole[this._selectedRoleIndex]) return [];
 
         const components = [];
 
