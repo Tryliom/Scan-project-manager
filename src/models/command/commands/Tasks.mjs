@@ -154,6 +154,9 @@ class TaskInterface extends CommandInterface
         const tasks = [];
         this._chaptersForRole = {};
 
+        console.log("Roles", task.project.Roles);
+        console.log("Tasks", task.tasks);
+
         for (let i = 0; i <= task.project.Roles.length; i++)
         {
             const chapters = [];
