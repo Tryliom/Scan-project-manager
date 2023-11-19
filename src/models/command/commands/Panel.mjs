@@ -506,19 +506,21 @@ class PanelInterface extends CommandInterface
             }
             else if (interaction.customId === "update")
             {
-                exec("git pull", (error, stdout1, stderr) => {
-                    if (error) {
-                        this.DisplayError(error);
+                exec("git pull", async (error, stdout1, stderr) => {
+                    if (error)
+                    {
+                        await this.DisplayError(error);
                         return;
                     }
 
-                    exec("npm install", (error, stdout2, stderr) => {
-                        if (error) {
-                            this.DisplayError(error);
+                    exec("npm install", async (error, stdout2, stderr) => {
+                        if (error)
+                        {
+                            await this.DisplayError(error);
                             return;
                         }
 
-                        this.DisplayConfirmationMessage("Update finished\n\n**Git pull result**\n" + stdout1 + "\n\n**npm install result**\n" + stdout2);
+                        await this.DisplayConfirmationMessage("Update finished\n\n**Git pull result**\n" + stdout1 + "\n\n**npm install result**\n" + stdout2);
                         this._updated = true;
                     });
                 });
