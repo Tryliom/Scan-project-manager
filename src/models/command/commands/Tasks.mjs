@@ -114,6 +114,8 @@ class TaskInterface extends CommandInterface
     {
         const embed = EmbedUtility.GetNeutralEmbedMessage("Tasks");
 
+        console.log(this._tasks);
+
         if (this._tasks.length === 0)
         {
             embed.setDescription("You have no tasks.");
