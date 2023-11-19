@@ -182,7 +182,7 @@ export class CommandInterface
             }
             catch (error)
             {
-                await this.StopCollector(false);
+                await this.StopCollector(false, true);
             }
 
         }, 1000 * 60));
@@ -294,14 +294,14 @@ export class CommandInterface
 
     async OnAction() {}
 
-    async StopCollector(closeMessage = true)
+    async StopCollector(closeMessage = true, noMessage = false)
     {
         if (closeMessage)
         {
             await this.UpdateMsg(EmbedUtility.GetClosedEmbedMessage());
             setTimeout(() => (this.LastInteraction || this.Interaction).deleteReply(), 5000);
         }
-        else
+        else if (!noMessage)
         {
             await this.UpdateMsg(this.ConstructEmbed());
         }
