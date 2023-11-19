@@ -204,8 +204,22 @@ class TaskInterface extends CommandInterface
                 tasks.push(`- ${prefix} **${role}**: Chapter ${chapters[0]}${chapters.length > 1 ? ` to ${chapters[chapters.length - 1]}` : ""}`);
             }
         }
+        
+        let found = false;
 
-        console.log(this._chaptersForRole);
+        for (let i = 0; i < Object.keys(this._chaptersForRole).length; i++)
+        {
+            if (this._selectedRoleIndex === parseInt(Object.keys(this._chaptersForRole)[i]))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            this._selectedRoleIndex = parseInt(Object.keys(this._chaptersForRole)[0]);
+        }
 
         embed.addFields([
             {name: "\u200B", value: "\u200B"},
