@@ -214,7 +214,7 @@ class TaskInterface extends CommandInterface
 
     ConstructComponents()
     {
-        if (this._tasks.length === 0 || this._chaptersForRole[this._selectedRoleIndex]) return [];
+        if (this._tasks.length === 0 || !this._chaptersForRole[this._selectedRoleIndex]) return [];
 
         const components = [];
 
