@@ -100,7 +100,14 @@ class TaskInterface extends CommandInterface
                         this._needToUpdateSelection = true;
                     }
                 },
-                getList: () => this._chaptersForRole[this._selectedRoleIndex],
+                getList: () =>
+                {
+                    const value = this._chaptersForRole[this._selectedRoleIndex];
+
+                    console.log(value, this._chaptersForRole, this._selectedRoleIndex);
+
+                    return value;
+                },
                 options:
                 {
                     label: item => `Chapter ${item}`,
