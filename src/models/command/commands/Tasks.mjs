@@ -195,6 +195,8 @@ class TaskInterface extends CommandInterface
             }
         }
 
+        console.log(this._chaptersForRole);
+
         embed.addFields([
             {name: "\u200B", value: "\u200B"},
             {name: "Tasks to do", value: tasks.join("\n")}
@@ -205,7 +207,7 @@ class TaskInterface extends CommandInterface
 
     ConstructComponents()
     {
-        if (this._tasks.length === 0 || Object.keys(this._chaptersForRole).length === 0) return [];
+        if (this._tasks.length === 0 || this._chaptersForRole[this._selectedRoleIndex]) return [];
 
         const components = [];
 
