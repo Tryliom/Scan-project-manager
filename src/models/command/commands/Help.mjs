@@ -2,12 +2,13 @@ import {Command} from "../Command.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {CustomMenu} from "../../menus/CustomMenu.mjs";
 import {SecurityUtility} from "../../utility/SecurityUtility.mjs";
+import {ButtonStyle} from "discord.js";
 
 export class Help extends Command
 {
     constructor()
     {
-        super("help", "", 0, "Show all available commands.", "Show all available commands with more explanations.");
+        super("help", "", 0, "Show all available commands.", "Show all available commands with more explanations and support server link.");
     }
 
     async Run(interaction)
@@ -45,6 +46,14 @@ export class Help extends Command
             embeds.push(EmbedUtility.GetGoodEmbedMessage("Help").setDescription(description));
         }
 
-        await new CustomMenu(interaction, embeds).LaunchMenu();
+        const actions = [
+            {
+                text: "Support Server",
+                url: "https://discord.gg/63avpZ7wWN",
+                color: ButtonStyle.Link
+            }
+        ];
+
+        await new CustomMenu(interaction, embeds, [actions]).LaunchMenu();
     }
 }

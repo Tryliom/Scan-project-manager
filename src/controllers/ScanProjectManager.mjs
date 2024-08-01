@@ -58,6 +58,7 @@ export class ScanProjectManager
             setInterval(() => this.DataCenter.Backup(), 1000 * 60 * 60 * 24);
             setInterval(() => this.DataCenter.SaveAll(), 1000 * 60 * 5);
             setInterval(() => this.DataCenter.DailyCheck(), 1000 * 60 * 60 * 24);
+            setInterval(() => this.DiscordClient.user.setActivity(`/help | v${process.env.npm_package_version}`), 1000 * 60 * 60 * 10);
         });
 
         this.DiscordClient.on("error", e =>
@@ -134,7 +135,7 @@ export class ScanProjectManager
     {
         Logger.Log("Emergency exit", reason);
 
-        // Send message to creator in DM with the reason
+        // Send a message to creator in DM with the reason
         await this.SendDM(process.env.creatorID, EmbedUtility.FormatMessageContent(EmbedUtility.GetWarningEmbedMessage("Emergency exit", reason)));
 
         process.exit();
