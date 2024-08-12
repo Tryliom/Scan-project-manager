@@ -7,6 +7,7 @@ import {EmbedUtility} from "../models/utility/EmbedUtility.mjs";
 
 export class ScanProjectManager
 {
+    // Variables are named differently than their class name to avoid conflicts with the class name
     /** @type {ScanProjectManager} */
     static Instance
     /** @type {CommandController} */
