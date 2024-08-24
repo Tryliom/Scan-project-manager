@@ -2,6 +2,7 @@ import {Command} from "../Command.mjs";
 import {CommandInterface} from "../../menus/CommandInterface.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 
 export class Server extends Command
 {
@@ -47,7 +48,8 @@ class ServerInterface extends CommandInterface
         const embed = EmbedUtility.GetNeutralEmbedMessage("Server settings");
 
         embed.addFields([
-            {name: "Bot information channel", value: `${server.BotInformationChannelId === "" ? "None" : `<#${server.BotInformationChannelId}>`}`}
+            {name: "Bot information channel", value: `${server.BotInformationChannelId === "" ? "None" : `<#${server.BotInformationChannelId}>`}`},
+            {name: "Visibility", value: `${server.Visibility ? "Visible to everyone" : "Visible to team only"}\nIf set to team only, only the team can see the projects.`}
         ]);
 
         return embed;
@@ -59,6 +61,29 @@ class ServerInterface extends CommandInterface
 
         this.AddMenuComponents(components, 0);
 
+        components.push(
+            new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId("visibility")
+                        .setLabel("Visibility")
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji({name: "🔄"})
+                )
+        );
+
         return components;
+    }
+
+    async OnButton(interaction)
+    {
+        const server = ScanProjectManager.Instance.DataCenter.GetServer(this.Interaction.guildId);
+
+        switch (interaction.customId)
+        {
+            case "visibility":
+                server.Visibility = !server.Visibility;
+                break;
+        }
     }
 }

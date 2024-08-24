@@ -5,19 +5,89 @@ import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 import {StatsType} from "../../data/ServerStats.mjs";
+import {DiscordUtility} from "../../utility/DiscordUtility.mjs";
 
 export class Tasks extends Command
 {
     constructor()
     {
-        super("tasks", "", 0, "Show all your tasks/chapters to do.",
+        super(
+            "tasks",
+            "as",
+            0,
+            "Show all your tasks/chapters to do.",
             "This command will show you all the tasks/chapters you have to do for all your projects. If you do the command in a project channel, it will show you the tasks/chapters for this project directly.\n" +
-            "There is more information in /faq command.");
+            "There is more information in /faq command. As a project manager/admin, you can see the tasks of someone else by using the 'as' option."
+        );
+    }
+
+    AddSubCommands(slashCommand)
+    {
+        slashCommand.addStringOption(option => option.setName("as")
+            .setDescription("Can be used to see the tasks of someone else, only for project managers/admins (take user id)")
+            .setRequired(false)
+            .setAutocomplete(true)
+        );
+    }
+
+    async OnAutocomplete(interaction, focusedOption)
+    {
+        if (focusedOption.name !== "as") return;
+
+        const result = [];
+        const projects = this._scanProjectManager.DataCenter.GetProjects(interaction);
+        const projectLength = Object.keys(projects).length;
+
+        if (projectLength === 0) return;
+
+        const isAdmin = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guild.id).members.cache.get(interaction.user.id).permissions.has("Administrator");
+
+        if (!isAdmin)
+        {
+            // Check if the user is a project manager
+            if (Object.keys(projects).filter(projectId => projects[projectId].ProjectManagers.includes(interaction.user.id)).length === 0) return;
+        }
+
+        // Get all the users in the server
+        const members = await interaction.guild.members.fetch();
+
+        for (const member of members)
+        {
+            const user = member[1].user;
+
+            result.push({
+                name: user.username,
+                value: user.id
+            });
+        }
+
+        // Sort the result by name of the user
+        result.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Keep only the first 25 results that are the most relevant with focusedOption.value
+        const focusedOptionValue = focusedOption.value.toLowerCase();
+        const filteredResult = result.filter(user => user.name.toLowerCase().includes(focusedOptionValue));
+
+        await interaction.respond(filteredResult.slice(0, 25));
     }
 
     async Run(interaction)
     {
-        await new TaskInterface(interaction).Start();
+        const asUserId = interaction.options.getString("as") || "";
+
+        if (asUserId !== "")
+        {
+            const projects = ScanProjectManager.Instance.DataCenter.GetProjects(interaction);
+            const isAdmin = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guild.id).members.cache.get(interaction.user.id).permissions.has("Administrator");
+
+            if (!isAdmin && Object.keys(projects).filter(projectId => projects[projectId].ProjectManagers.includes(interaction.user.id)).length === 0)
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("You can't use the 'as' option to see the tasks of someone else."), true);
+                return;
+            }
+        }
+
+        await new TaskInterface(interaction, asUserId).Start();
     }
 }
 
@@ -35,12 +105,15 @@ class TaskInterface extends CommandInterface
     _chaptersForRole = {};
     /** @type {boolean} */
     _needToUpdateSelection = false;
+    /** @type {string} */
+    _asUserId = "";
 
-    constructor(interaction)
+    constructor(interaction, asUserId)
     {
         super(interaction);
 
-        this._tasks = ScanProjectManager.Instance.DataCenter.GetProjectWithTasks(this.Interaction.user.id);
+        this._asUserId = asUserId;
+        this.UpdateTasks();
 
         // Check if the command come from a project channel, then set the page to the project
         for (let i = 0; i < this._tasks.length; i++)
@@ -250,7 +323,7 @@ class TaskInterface extends CommandInterface
             )
         );
 
-        this.AddMenuComponents(components, 1);
+        if (this.CanEdit()) this.AddMenuComponents(components, 1);
 
         if (this._tasks.length > 1)
         {
@@ -279,6 +352,40 @@ class TaskInterface extends CommandInterface
 
     async OnAction()
     {
-        this._tasks = ScanProjectManager.Instance.DataCenter.GetProjectWithTasks(this.Interaction.user.id);
+        this.UpdateTasks();
+    }
+
+    UpdateTasks()
+    {
+        const settings = {
+            serverID: this.Interaction.guild !== null ? this.Interaction.guild.id : null,
+            userID: this.GetUserId(),
+            projectManagerID: null
+        };
+
+        if (this._asUserId !== "")
+        {
+            // Check if it's the project manager or admin
+            const isAdmin = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(settings.serverID).members.cache.get(this.Interaction.user.id).permissions.has("Administrator");
+
+            if (!isAdmin)
+            {
+                settings.projectManagerID = this.Interaction.user.id;
+            }
+        }
+
+        this._tasks = ScanProjectManager.Instance.DataCenter.GetProjectWithTasks(settings);
+    }
+
+    GetUserId()
+    {
+        if (this._asUserId) return this._asUserId;
+
+        return this.Interaction.user.id;
+    }
+
+    CanEdit()
+    {
+        return this._asUserId === "";
     }
 }

@@ -12,6 +12,10 @@ export class Server
     Stats = new ServerStats()
     /** @type {string} */
     BotInformationChannelId = ""
+    /**
+     * @brief Whether the projects are visible to everyone or only the team.
+     * @type {boolean} */
+    Visibility = false
 
     constructor()
     {
@@ -19,6 +23,7 @@ export class Server
         this.Projects = {};
         this.Stats = new ServerStats();
         this.BotInformationChannelId = "";
+        this.Visibility = false;
     }
 
     FromJson(data)
@@ -38,6 +43,8 @@ export class Server
             data.Projects[projectId].Id = projectId;
             this.Projects[projectId] = new Project().FromJson(data.Projects[projectId]);
         }
+
+        if (data.Visibility !== undefined) this.Visibility = data.Visibility;
 
         return this;
     }

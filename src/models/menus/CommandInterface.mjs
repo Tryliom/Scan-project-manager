@@ -87,7 +87,6 @@ export class CommandInterface
         Mentionable: 4,
     };
 
-
     /**
      * Command interface constructor
      * @constructor
@@ -184,7 +183,6 @@ export class CommandInterface
             {
                 await this.StopCollector(false, true);
             }
-
         }, 1000 * 60));
     }
 

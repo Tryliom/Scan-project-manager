@@ -7,6 +7,7 @@ import {ActionRowBuilder, ButtonBuilder, ButtonStyle} from "discord.js";
 import {ProjectEditor} from "../../menus/interfaces/ProjectEditor.mjs";
 import {Project} from "../../data/Project.mjs";
 import {ConfirmationInterface} from "../../menus/interfaces/ConfirmationInterface.mjs";
+import {DiscordUtility} from "../../utility/DiscordUtility.mjs";
 
 export class Projects extends Command
 {
@@ -16,12 +17,43 @@ export class Projects extends Command
             "List, create, edit and delete projects. There is a guide to use it in /faq.");
 
         this.SetOnlyInServer();
-        this.SetAdmin();
     }
 
     async Run(interaction)
     {
-        await new ProjectManager(interaction).Start();
+        // Check if the user is in a project if server visibility is set to team only
+        const server = ScanProjectManager.Instance.DataCenter.GetServer(interaction.guildId);
+        const userID = interaction.user.id;
+        const isAdmin = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guildId).members.cache.get(userID).permissions.has("Administrator");
+
+        if (!server.Visibility && !isAdmin)
+        {
+            const projects = ScanProjectManager.Instance.DataCenter.GetProjects(interaction);
+
+            if (Object.keys(projects).length === 0)
+            {
+                await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("There are no projects in this server."), true);
+                return;
+            }
+
+            for (let projectId in projects)
+            {
+                /** @type {Project} */
+                const project = projects[projectId];
+
+                if (project.Roles.filter(role => role.Users.includes(userID)).length > 0 || project.ProjectManagers.includes(userID))
+                {
+                    await new ProjectManager(interaction, true).Start();
+                    return;
+                }
+            }
+
+            await DiscordUtility.Reply(interaction, EmbedUtility.GetBadEmbedMessage("You are not part of any project in this server."), true);
+        }
+        else
+        {
+            await new ProjectManager(interaction, isAdmin).Start();
+        }
     }
 }
 
@@ -37,10 +69,14 @@ class ProjectManager extends CommandInterface
     _menu = Menu.Home;
     /** @type {number} */
     page = 0;
+    /** @type {boolean} */
+    _canEdit = true;
 
-    constructor(interaction)
+    constructor(interaction, canEdit = true)
     {
         super(interaction);
+
+        this._canEdit = canEdit;
 
         this.SetMenuList([
             {
@@ -129,6 +165,7 @@ class ProjectManager extends CommandInterface
                     .setLabel("Create")
                     .setStyle(ButtonStyle.Secondary)
                     .setEmoji(EmojiUtility.GetEmojiData(EmojiUtility.Emojis.Add))
+                    .setDisabled(!this._canEdit)
             )
         );
         components.push(this.GetCloseButton());
@@ -205,11 +242,13 @@ class ProjectManager extends CommandInterface
                     new ButtonBuilder()
                         .setCustomId(`projects_edit`)
                         .setStyle(ButtonStyle.Secondary)
-                        .setEmoji({name: "✏️"}),
+                        .setEmoji({name: "✏️"})
+                        .setDisabled(!this._canEdit),
                     new ButtonBuilder()
                         .setCustomId(`projects_delete`)
                         .setStyle(ButtonStyle.Danger)
-                        .setEmoji({name: "🗑️"}),
+                        .setEmoji({name: "🗑️"})
+                        .setDisabled(!this._canEdit),
                     new ButtonBuilder()
                         .setCustomId(`refresh`)
                         .setEmoji({name: "🔄"})

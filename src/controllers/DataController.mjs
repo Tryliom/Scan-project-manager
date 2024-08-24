@@ -469,23 +469,27 @@ export class DataController
     }
 
     /**
-     *
-     * @param userId
+     * @param settings {{serverID: string | null, userID: string, projectManagerID: string | null}}
      * @returns {{serverId: string, project: Project, tasks: {task: Task, roleAvailable: number[]}[]}[]}
      * @constructor
      */
-    GetProjectWithTasks(userId)
+    GetProjectWithTasks(settings)
     {
         const projects = [];
+        const userId = settings.userID;
 
         if (this._users[userId] === undefined) return projects;
 
         for (const work of this._users[userId])
         {
+            if (settings.serverID !== null && work.ServerId !== settings.serverID) continue;
+
             const project = this.GetProject({guildId: work.ServerId}, work.ProjectId);
             const tasks = [];
 
             if (project === undefined) continue;
+
+            if (settings.projectManagerID !== null && !project.ProjectManagers.includes(settings.projectManagerID)) continue;
 
             for (const task of project.Tasks)
             {
