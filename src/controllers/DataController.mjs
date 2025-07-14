@@ -84,6 +84,35 @@ export class DataController
 
         // Convert data to BotInfo objects
         this._botInfos = new BotInfo().FromJson(this._botInfos);
+
+        // Check if the users have works in projects he's in
+        for (const serverId in this._servers)
+        {
+            const server = this._servers[serverId];
+            const projects = server.Projects;
+
+            for (const projectId in projects)
+            {
+                const project = projects[projectId];
+
+                for (const role of project.Roles)
+                {
+                    for (const userId of role.Users)
+                    {
+                        if (this._users[userId] === undefined)
+                        {
+                            this._users[userId] = [];
+                        }
+
+                        // Add the work if it doesn't exist
+                        if (!this._users[userId].some(work => work.ProjectId === projectId && work.ServerId === serverId))
+                        {
+                            this._users[userId].push(new Work().FromJson({ProjectId: projectId, ServerId: serverId}));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     SaveAll()
@@ -737,6 +766,14 @@ export class DataController
                 if (newUsersAssignments[userId] === undefined) newUsersAssignments[userId] = [];
 
                 newUsersAssignments[userId].push(role.Name);
+
+                // Add the work if it doesn't exist
+                if (this._users[userId] === undefined) this._users[userId] = [];
+
+                if (!this._users[userId].some(work => work.ProjectId === editedProject.Id && work.ServerId === interaction.guildId))
+                {
+                    this._users[userId].push(new Work().FromJson({ProjectId: editedProject.Id, ServerId: interaction.guildId}));
+                }
             }
         }
 
@@ -944,7 +981,8 @@ export class DataController
                     {
                         if (movingRole[i] === undefined) continue;
 
-                        if (!task.Completion[i] && index === movingRole[i]) {
+                        if (!task.Completion[i] && index === movingRole[i])
+                        {
                             shouldBreak = true;
                             break;
                         }
