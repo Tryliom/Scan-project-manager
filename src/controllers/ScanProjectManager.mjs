@@ -106,6 +106,17 @@ export class ScanProjectManager
             }
         });
 
+        this.DiscordClient.on("guildDelete", guild =>
+        {
+            const projects = ScanProjectManager.Instance.DataCenter.GetProjects({guildId: guild.id});
+            const keys = Object.keys(projects);
+
+            for (let key of keys)
+            {
+                delete projects[key];
+            }
+        });
+
         process.on('uncaughtException', (error) => {
             console.error(error);
         });

@@ -1,6 +1,6 @@
 import {Command} from "../Command.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
-import {CommandInterface} from "../../menus/CommandInterface.mjs";
+import {CommandInterface} from "../../menus/BaseCommandInterface.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, time} from "discord.js";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";

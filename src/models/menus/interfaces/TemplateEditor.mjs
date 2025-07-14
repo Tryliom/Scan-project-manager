@@ -1,6 +1,6 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle} from "discord.js";
 
-import {CommandInterface} from "../CommandInterface.mjs";
+import {CommandInterface} from "../BaseCommandInterface.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {Template} from "../../data/Template.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";

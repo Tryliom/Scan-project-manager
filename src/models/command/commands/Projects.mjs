@@ -1,5 +1,5 @@
 import {Command} from "../Command.mjs";
-import {CommandInterface} from "../../menus/CommandInterface.mjs";
+import {CommandInterface} from "../../menus/BaseCommandInterface.mjs";
 import {ScanProjectManager} from "../../../controllers/ScanProjectManager.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {EmojiUtility} from "../../utility/EmojiUtility.mjs";

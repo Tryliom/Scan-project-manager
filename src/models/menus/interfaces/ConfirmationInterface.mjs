@@ -1,4 +1,4 @@
-import {CommandInterface} from "../CommandInterface.mjs";
+import {CommandInterface} from "../BaseCommandInterface.mjs";
 import {EmbedUtility} from "../../utility/EmbedUtility.mjs";
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction} from "discord.js";
 
