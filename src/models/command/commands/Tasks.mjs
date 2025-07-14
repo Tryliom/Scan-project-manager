@@ -23,57 +23,15 @@ export class Tasks extends Command
 
     AddSubCommands(slashCommand)
     {
-        slashCommand.addStringOption(option => option.setName("as")
+        slashCommand.addUserOption(option => option.setName("as")
             .setDescription("Can be used to see the tasks of someone else, only for project managers/admins (take user id)")
             .setRequired(false)
-            .setAutocomplete(true)
         );
-    }
-
-    async OnAutocomplete(interaction, focusedOption)
-    {
-        if (focusedOption.name !== "as") return;
-
-        const result = [];
-        const projects = this._scanProjectManager.DataCenter.GetProjects(interaction);
-        const projectLength = Object.keys(projects).length;
-
-        if (projectLength === 0) return;
-
-        const isAdmin = ScanProjectManager.Instance.DiscordClient.guilds.cache.get(interaction.guild.id).members.cache.get(interaction.user.id).permissions.has("Administrator");
-
-        if (!isAdmin)
-        {
-            // Check if the user is a project manager
-            if (Object.keys(projects).filter(projectId => projects[projectId].ProjectManagers.includes(interaction.user.id)).length === 0) return;
-        }
-
-        // Get all the users in the server
-        const members = await interaction.guild.members.fetch();
-
-        for (const member of members)
-        {
-            const user = member[1].user;
-
-            result.push({
-                name: user.username,
-                value: user.id
-            });
-        }
-
-        // Sort the result by name of the user
-        result.sort((a, b) => a.name.localeCompare(b.name));
-
-        // Keep only the first 25 results that are the most relevant with focusedOption.value
-        const focusedOptionValue = focusedOption.value.toLowerCase();
-        const filteredResult = result.filter(user => user.name.toLowerCase().includes(focusedOptionValue));
-
-        await interaction.respond(filteredResult.slice(0, 25));
     }
 
     async Run(interaction)
     {
-        const asUserId = interaction.options.getString("as") || "";
+        const asUserId = interaction.options.getUser("as").id || "";
 
         if (asUserId !== "")
         {
